@@ -13,6 +13,12 @@ HCP connects hosted apps and workflow systems to local coding-agent harnesses su
 - Stream normalized harness events back to the control plane.
 - Keep provider executable paths, homes, launch args, and persistent environment local to the runner.
 
+## MCP Foundation
+
+Runner-side MCP support should use the official Model Context Protocol TypeScript SDK.
+
+The runner should rely on the SDK for MCP client/server protocol mechanics such as Streamable HTTP transports, client connection lifecycle, tool discovery, tool calls, standard protocol errors, and auth-provider hooks. HCP-specific policy remains in this repo: attachment allowlists, lease scoping, revocation behavior, redaction, audit events, and per-run attribution.
+
 ## Initial Shape
 
 This repo contains the public protocol, runner implementation, mock control plane, examples, and docs needed for apps to adopt HCP.
