@@ -503,7 +503,7 @@ function defaultMcpClientFactory(request: HarnessMcpClientRequest): HarnessMcpCl
     },
     proofSigner: request.proofSigner,
   });
-  if (request.driverKind === "codex") {
+  if (request.driverKind === "codex" || request.driverKind === "claude") {
     return new McpProxyServer({
       attachment: request.attachment,
       upstream,

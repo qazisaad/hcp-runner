@@ -65,6 +65,26 @@ function createCodexConfig(workspacePath: string): RunnerConfig {
   };
 }
 
+function createClaudeConfig(workspacePath: string): RunnerConfig {
+  return {
+    ...createConfig(workspacePath),
+    provider_instances: [
+      {
+        id: "claude-local",
+        driver_kind: "claude",
+        enabled: true,
+        launch_args: [],
+        env: {},
+        models: [{ id: "sonnet", label: "Claude Sonnet", capabilities: { option_descriptors: [] } }],
+        hidden_models: [],
+        model_order: [],
+        favorite_models: [],
+        local_capabilities: ["filesystem", "git", "shell"],
+      },
+    ],
+  };
+}
+
 async function createWorkspace(): Promise<{ root: string; project: string; cleanup: () => Promise<void> }> {
   const root: string = await mkdtemp(join(tmpdir(), "hcp-runner-workspace-"));
   const project: string = join(root, "project");
@@ -629,6 +649,67 @@ describe("HarnessSessionManager", () => {
       );
       assert.deepEqual(connected, ["tools"]);
       assert.deepEqual(closed, ["tools"]);
+    } finally {
+      await workspace.cleanup();
+    }
+  });
+
+  it("proxies Claude MCP attachments before adapter start", async () => {
+    const workspace = await createWorkspace();
+    const connected: string[] = [];
+    const manager = new HarnessSessionManager(createClaudeConfig(workspace.root), {
+      mcpClientFactory(request) {
+        return {
+          get adapterAttachment() {
+            return {
+              ...request.attachment,
+              url: "http://127.0.0.1:12345/mcp",
+              headers: {},
+            };
+          },
+          async connect(): Promise<void> {
+            connected.push(request.attachment.name);
+          },
+          async close(): Promise<void> {
+            return;
+          },
+        };
+      },
+    });
+
+    try {
+      const events = await manager.startSession({
+        session_id: "session-1",
+        workspace_id: "repo",
+        provider_instance_id: "claude-local",
+        driver_kind: "claude",
+        cwd: workspace.root,
+        sandbox_mode: "workspace_write",
+        approval_policy: "ask",
+        continue_session: false,
+        model_selection: { model: "sonnet" },
+        mcp_servers: [
+          {
+            name: "tools",
+            transport: "streamable_http",
+            url: "https://example.com/mcp",
+            headers: { Authorization: "Bearer token" },
+            lease_id: "mcp_lease_123",
+            proof_of_possession: {
+              scheme: "runner_signed_request",
+              key_id: "proof_key_123",
+              required_headers: ["x-hcp-proof-signature"],
+            },
+          },
+        ],
+      });
+
+      assert.deepEqual(connected, ["tools"]);
+      assert.deepEqual(
+        events.map((event) => event.event_type),
+        ["session.started", "workspace.preflight.completed", "session.configured", "mcp.status.updated"],
+      );
+      await manager.stopSession("session-1", "done");
     } finally {
       await workspace.cleanup();
     }

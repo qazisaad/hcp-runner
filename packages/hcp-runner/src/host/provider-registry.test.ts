@@ -219,4 +219,51 @@ describe("ProviderInstanceRegistry", () => {
       },
     ]);
   });
+
+  it("computes Claude continuation groups from runner-local home paths", () => {
+    const registry = ProviderInstanceRegistry.fromConfig({
+      ...config,
+      provider_instances: [
+        {
+          id: "claude-work",
+          driver_kind: "claude",
+          enabled: true,
+          home: "/tmp/claude-work",
+          launch_args: [],
+          env: {},
+          models: [],
+          hidden_models: [],
+          model_order: [],
+          favorite_models: [],
+          local_capabilities: ["filesystem"],
+        },
+        {
+          id: "claude-personal",
+          driver_kind: "claude",
+          enabled: true,
+          home: "/tmp/claude-personal",
+          launch_args: [],
+          env: {},
+          models: [],
+          hidden_models: [],
+          model_order: [],
+          favorite_models: [],
+          local_capabilities: ["filesystem"],
+        },
+      ],
+    });
+
+    assert.deepEqual(registry.computeContinuationGroups(), [
+      {
+        key: "claude:/tmp/claude-work",
+        driver_kind: "claude",
+        provider_instance_ids: ["claude-work"],
+      },
+      {
+        key: "claude:/tmp/claude-personal",
+        driver_kind: "claude",
+        provider_instance_ids: ["claude-personal"],
+      },
+    ]);
+  });
 });

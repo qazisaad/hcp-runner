@@ -22,17 +22,17 @@ Implemented today:
 - Reference pairing with single-use pairing codes, local credential storage, and short-lived connection tokens.
 - Outbound WebSocket lifecycle with hello, accept/reject, heartbeat, reconnect, replay, and capability snapshots.
 - Control-plane command handling with ACK/NACK responses and duplicate-command idempotency.
-- Adapter-based session lifecycle with a deterministic mock adapter and a Codex adapter.
+- Adapter-based session lifecycle with deterministic mock, Codex, and Claude Code adapters.
 - Local capability leases and real filesystem, Git, shell, and dev-server executors.
 - MCP Streamable HTTP attachment client using the official Model Context Protocol TypeScript SDK.
 - Attachment policy for allowed/denied tools, expiry checks, proof-bound requests, redaction, and close-on-session-end.
 - Sample Streamable HTTP MCP server with server-side proof verification.
 - Mock control plane and end-to-end example for local development and integration testing.
-- Codex live-smoke example that advertises real local Codex readiness, validates proxied MCP setup, and runs one real Codex turn when the local Codex CLI config and auth are valid.
+- Codex and Claude Code live-smoke examples that advertise real local provider readiness, validate proxied MCP setup, and run one real provider turn when local CLI config and auth are valid.
 
 Next major work:
 
-- Claude Code adapter and richer provider-native event normalization.
+- Richer provider-native event normalization.
 - Published packages and release automation.
 - Contributor docs, security-reporting process, and compatibility matrix.
 
@@ -63,6 +63,8 @@ The runner is the local trust boundary. It advertises what is available, accepts
 | `apps/mock-control-plane` | Local WebSocket control plane for development, tests, and third-party validation. |
 | `apps/sample-mcp-server` | Streamable HTTP MCP server that verifies HCP proof-of-possession headers. |
 | `examples/basic-runner-flow.ts` | Standalone reference flow from pairing through session turn and cleanup. |
+| `examples/codex-runner-flow.ts` | Live-smoke reference flow for local Codex CLI readiness, proxied MCP setup, and one Codex turn. |
+| `examples/claude-runner-flow.ts` | Live-smoke reference flow for local Claude Code readiness, proxied MCP setup, and one Claude Code turn. |
 | `docs/architecture.md` | Architecture boundary and MCP SDK responsibility split. |
 | `docs/license-decision.md` | Apache-2.0 licensing rationale. |
 
@@ -118,6 +120,14 @@ npx tsx examples/codex-runner-flow.ts
 ```
 
 This flow pairs with the mock control plane, connects a local runner, probes the configured Codex provider, and starts a real Codex turn only when `codex --version` and `codex login status` succeed. The example uses runner-local `launch_args` to pass a process-scoped `service_tier=fast` override for current Codex CLI compatibility; it does not edit `~/.codex/config.toml`. The live turn uses HCP `approval_policy: "full_access"` so `codex exec` can run non-interactively while the sandbox remains `workspace_write`. If Codex is unavailable or unauthenticated, the example prints the provider snapshot and exits without sending a turn.
+
+Run the Claude Code live-smoke reference flow:
+
+```bash
+npx tsx examples/claude-runner-flow.ts
+```
+
+This flow pairs with the mock control plane, connects a local runner, probes the configured Claude Code provider, validates proxied MCP setup, and starts a real Claude Code turn only when `claude --version` and `claude auth status --json` succeed. The live turn uses `claude -p --output-format json --no-session-persistence` with HCP `approval_policy: "full_access"` so the provider can run non-interactively without creating a persisted Claude session.
 
 Run the public protocol conformance fixtures:
 
@@ -218,7 +228,7 @@ The runner enforces:
 - Event emission for connection, discovery, tool calls, denial, and failure.
 - Client close and cleanup when the harness session ends.
 
-For Codex sessions, the runner creates a session-owned loopback MCP proxy for each attachment. The proxy talks to the platform MCP server through `McpAttachmentClient`, injects the required proof-of-possession headers, and exposes a local `http://127.0.0.1:<port>/mcp` endpoint to `codex exec` through process-local `-c mcp_servers.<name>.url=...` config overlays. The adapter rejects any unproxied Codex MCP attachment with `codex_mcp_attachment_requires_proxy`, so platform URLs and bearer/proof headers are not passed directly to Codex and the user's permanent Codex config is not mutated.
+For Codex and Claude Code sessions, the runner creates a session-owned loopback MCP proxy for each attachment. The proxy talks to the platform MCP server through `McpAttachmentClient`, injects the required proof-of-possession headers, and exposes a local `http://127.0.0.1:<port>/mcp` endpoint to the provider CLI through process-local config overlays. Codex receives `-c mcp_servers.<name>.url=...`; Claude Code receives `--mcp-config ... --strict-mcp-config`. The adapters reject unproxied MCP attachments, so platform URLs and bearer/proof headers are not passed directly to provider CLIs and permanent user config is not mutated.
 
 ## Local Capability Leases
 

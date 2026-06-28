@@ -7,7 +7,7 @@ import { describe, it } from "node:test";
 import type { HcpSessionStartPayload } from "@hcp-runner/protocol";
 
 import type { ProviderInstanceConfig } from "../config/index.js";
-import { CodexHarnessAdapter, HarnessAdapterError, type HarnessAdapterEvent } from "./adapters.js";
+import { ClaudeHarnessAdapter, CodexHarnessAdapter, HarnessAdapterError, type HarnessAdapterEvent } from "./adapters.js";
 
 type FilesystemError = Error & {
   code?: string;
@@ -37,6 +37,30 @@ function provider(executablePath: string, env: Record<string, string> = {}): Pro
   };
 }
 
+function claudeProvider(executablePath: string, env: Record<string, string> = {}): ProviderInstanceConfig {
+  return {
+    id: "claude-local",
+    driver_kind: "claude",
+    enabled: true,
+    executable_path: executablePath,
+    launch_args: [],
+    env,
+    models: [
+      {
+        id: "sonnet",
+        label: "Claude Sonnet",
+        capabilities: {
+          option_descriptors: [],
+        },
+      },
+    ],
+    hidden_models: [],
+    model_order: [],
+    favorite_models: [],
+    local_capabilities: ["filesystem", "git", "shell"],
+  };
+}
+
 function startPayload(workspace: string): HcpSessionStartPayload {
   return {
     session_id: "session-1",
@@ -48,6 +72,21 @@ function startPayload(workspace: string): HcpSessionStartPayload {
     approval_policy: "ask",
     continue_session: false,
     model_selection: { model: "gpt-test" },
+    mcp_servers: [],
+  };
+}
+
+function claudeStartPayload(workspace: string): HcpSessionStartPayload {
+  return {
+    session_id: "session-1",
+    workspace_id: "workspace-1",
+    provider_instance_id: "claude-local",
+    driver_kind: "claude",
+    cwd: workspace,
+    sandbox_mode: "workspace_write",
+    approval_policy: "ask",
+    continue_session: false,
+    model_selection: { model: "sonnet" },
     mcp_servers: [],
   };
 }
@@ -105,6 +144,71 @@ async function fakeCodexScript(authenticated: boolean): Promise<{ root: string; 
       "    *)",
       "      echo 'fake codex final' > \"$output\"",
       "      echo '{\"event\":\"done\"}'",
+      "      exit 0",
+      "      ;;",
+      "  esac",
+      "fi",
+      "echo \"unexpected args: $*\" >&2",
+      "exit 2",
+      "",
+    ].join("\n"),
+    "utf8",
+  );
+  await chmod(executable, 0o700);
+  return {
+    root,
+    executable,
+    cleanup: async (): Promise<void> => {
+      await rm(root, { recursive: true, force: true });
+    },
+  };
+}
+
+async function fakeClaudeScript(authenticated: boolean): Promise<{ root: string; executable: string; cleanup(): Promise<void> }> {
+  const root: string = await mkdtemp(join(tmpdir(), "hcp-fake-claude-"));
+  const executable: string = join(root, "claude");
+  await writeFile(
+    executable,
+    [
+      "#!/bin/sh",
+      "if [ -n \"$HCP_FAKE_CLAUDE_ARGS_PATH\" ]; then printf '%s\\n' \"$*\" >> \"$HCP_FAKE_CLAUDE_ARGS_PATH\"; fi",
+      "is_print=0",
+      "is_version=0",
+      "is_auth_status=0",
+      "prev=''",
+      "for arg in \"$@\"; do",
+      "  if [ \"$arg\" = \"--version\" ] || [ \"$arg\" = \"-v\" ]; then is_version=1; fi",
+      "  if [ \"$prev\" = \"auth\" ] && [ \"$arg\" = \"status\" ]; then is_auth_status=1; fi",
+      "  if [ \"$arg\" = \"-p\" ] || [ \"$arg\" = \"--print\" ]; then is_print=1; fi",
+      "  prev=\"$arg\"",
+      "done",
+      "if [ \"$is_version\" = \"1\" ]; then echo '2.9.9 (Claude Code)'; exit 0; fi",
+      "if [ \"$is_auth_status\" = \"1\" ]; then",
+      authenticated ? "  echo '{\"loggedIn\":true}'; exit 0" : "  echo '{\"loggedIn\":false}'; exit 1",
+      "fi",
+      "if [ \"$is_print\" = \"1\" ]; then",
+      "  if [ -n \"$HCP_FAKE_CLAUDE_STARTED_PATH\" ]; then echo started > \"$HCP_FAKE_CLAUDE_STARTED_PATH\"; fi",
+      "  if [ -n \"$HCP_FAKE_CLAUDE_TERMINATED_PATH\" ]; then",
+      "    trap 'echo terminated > \"$HCP_FAKE_CLAUDE_TERMINATED_PATH\"; exit 143' TERM INT",
+      "  fi",
+      "  case \"${HCP_FAKE_CLAUDE_EXEC_MODE:-success}\" in",
+      "    fail)",
+      "      echo 'fake failure at /Users/example/.claude/settings.json with Bearer abc123 and api_key=secret123' >&2",
+      "      exit 42",
+      "      ;;",
+      "    sleep)",
+      "      while true; do sleep 1; done",
+      "      ;;",
+      "    invalid_json)",
+      "      echo '{not-json'",
+      "      exit 0",
+      "      ;;",
+      "    error_json)",
+      "      echo '{\"type\":\"result\",\"subtype\":\"error\",\"is_error\":true,\"result\":\"fake claude error\"}'",
+      "      exit 0",
+      "      ;;",
+      "    *)",
+      "      echo '{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false,\"result\":\"fake claude final\",\"terminal_reason\":\"completed\"}'",
       "      exit 0",
       "      ;;",
       "  esac",
@@ -541,6 +645,184 @@ describe("CodexHarnessAdapter", () => {
         (error: unknown): boolean =>
           error instanceof HarnessAdapterError && error.code === "codex_mcp_attachment_requires_proxy",
       );
+    } finally {
+      await workspace.cleanup();
+      await fake.cleanup();
+    }
+  });
+});
+
+describe("ClaudeHarnessAdapter", () => {
+  it("reports unauthenticated status when Claude auth status fails", async () => {
+    const fake = await fakeClaudeScript(false);
+    const adapter = new ClaudeHarnessAdapter();
+
+    try {
+      const status = await adapter.probe(claudeProvider(fake.executable));
+      assert.equal(status.installed, true);
+      assert.equal(status.available, false);
+      assert.equal(status.status, "unauthenticated");
+      assert.match(status.message ?? "", /loggedIn/);
+    } finally {
+      await fake.cleanup();
+    }
+  });
+
+  it("runs a fake Claude turn and normalizes JSON result output", async () => {
+    const fake = await fakeClaudeScript(true);
+    const workspace = await createWorkspace();
+    const adapter = new ClaudeHarnessAdapter();
+    const selectedProvider = claudeProvider(fake.executable);
+
+    try {
+      const selectedStartPayload: HcpSessionStartPayload = claudeStartPayload(workspace.root);
+      const session = await adapter.startSession({ payload: selectedStartPayload, provider: selectedProvider });
+      const events: HarnessAdapterEvent[] = await adapter.sendTurn({
+        session,
+        startPayload: selectedStartPayload,
+        provider: selectedProvider,
+        payload: {
+          session_id: "session-1",
+          turn_id: "turn-1",
+          input: "Say hello.",
+        },
+      });
+
+      assert.deepEqual(
+        events.map((event) => event.event_type),
+        ["turn.started", "content.delta", "turn.completed"],
+      );
+      assert.deepEqual(events.at(-1)?.data.final_output, { final_text: "fake claude final" });
+      assert.deepEqual(await adapter.cancelTurn({ sessionId: "session-1", turnId: "turn-1" }), []);
+    } finally {
+      await workspace.cleanup();
+      await fake.cleanup();
+    }
+  });
+
+  it("passes proxied MCP config to Claude turns", async () => {
+    const fake = await fakeClaudeScript(true);
+    const workspace = await createWorkspace();
+    const argsPath: string = join(fake.root, "args.log");
+    const adapter = new ClaudeHarnessAdapter();
+    const selectedProvider: ProviderInstanceConfig = claudeProvider(fake.executable, { HCP_FAKE_CLAUDE_ARGS_PATH: argsPath });
+
+    try {
+      const selectedStartPayload: HcpSessionStartPayload = {
+        ...claudeStartPayload(workspace.root),
+        mcp_servers: [
+          {
+            name: "tools",
+            transport: "streamable_http",
+            url: "http://127.0.0.1:12345/mcp",
+            headers: {},
+            lease_id: "mcp_lease_123",
+            proof_of_possession: {
+              scheme: "runner_signed_request",
+              key_id: "proof_key_123",
+              required_headers: ["x-hcp-proof-signature"],
+            },
+          },
+        ],
+      };
+      const session = await adapter.startSession({ payload: selectedStartPayload, provider: selectedProvider });
+      await adapter.sendTurn({
+        session,
+        startPayload: selectedStartPayload,
+        provider: selectedProvider,
+        payload: {
+          session_id: "session-1",
+          turn_id: "turn-1",
+          input: "Say hello.",
+        },
+      });
+
+      const lines: string[] = (await readFile(argsPath, "utf8")).trim().split(/\r?\n/);
+      assert.match(
+        lines[0] ?? "",
+        /^--mcp-config \{"mcpServers":\{"tools":\{"type":"http","url":"http:\/\/127\.0\.0\.1:12345\/mcp"\}\}\} --strict-mcp-config -p --output-format json --no-session-persistence --permission-mode default --model sonnet /,
+      );
+    } finally {
+      await workspace.cleanup();
+      await fake.cleanup();
+    }
+  });
+
+  it("fails closed when Claude sessions include unproxied MCP attachments", async () => {
+    const fake = await fakeClaudeScript(true);
+    const workspace = await createWorkspace();
+    const adapter = new ClaudeHarnessAdapter();
+    const selectedProvider = claudeProvider(fake.executable);
+
+    try {
+      await assert.rejects(
+        () =>
+          adapter.startSession({
+            provider: selectedProvider,
+            payload: {
+              ...claudeStartPayload(workspace.root),
+              mcp_servers: [
+                {
+                  name: "tools",
+                  transport: "streamable_http",
+                  url: "https://example.com/mcp",
+                  headers: { Authorization: "Bearer token" },
+                  lease_id: "mcp_lease_123",
+                  proof_of_possession: {
+                    scheme: "runner_signed_request",
+                    key_id: "proof_key_123",
+                    required_headers: ["x-hcp-proof-signature"],
+                  },
+                },
+              ],
+            },
+          }),
+        (error: unknown): boolean =>
+          error instanceof HarnessAdapterError && error.code === "claude_mcp_attachment_requires_proxy",
+      );
+    } finally {
+      await workspace.cleanup();
+      await fake.cleanup();
+    }
+  });
+
+  it("stops active Claude child processes", async () => {
+    const fake = await fakeClaudeScript(true);
+    const workspace = await createWorkspace();
+    const startedPath: string = join(fake.root, "started");
+    const terminatedPath: string = join(fake.root, "terminated");
+    const adapter = new ClaudeHarnessAdapter({ turnTimeoutMs: 10_000 });
+    const selectedProvider = claudeProvider(fake.executable, {
+      HCP_FAKE_CLAUDE_EXEC_MODE: "sleep",
+      HCP_FAKE_CLAUDE_STARTED_PATH: startedPath,
+      HCP_FAKE_CLAUDE_TERMINATED_PATH: terminatedPath,
+    });
+
+    try {
+      const selectedStartPayload: HcpSessionStartPayload = claudeStartPayload(workspace.root);
+      const session = await adapter.startSession({ payload: selectedStartPayload, provider: selectedProvider });
+      const turnPromise: Promise<HarnessAdapterEvent[]> = adapter.sendTurn({
+        session,
+        startPayload: selectedStartPayload,
+        provider: selectedProvider,
+        payload: {
+          session_id: "session-1",
+          turn_id: "turn-1",
+          input: "Stop.",
+        },
+      });
+      await waitForPath(startedPath);
+
+      const stopEvents = await adapter.stopSession({ sessionId: "session-1", reason: "test-stop" });
+      const turnEvents = await turnPromise;
+
+      assert.deepEqual(
+        stopEvents.map((event) => event.event_type),
+        ["turn.cancelled"],
+      );
+      assert.equal((stopEvents[0]?.data.final_output as { exit_reason?: string } | undefined)?.exit_reason, "session_stopped");
+      assert.deepEqual(turnEvents, []);
+      await waitForPath(terminatedPath);
     } finally {
       await workspace.cleanup();
       await fake.cleanup();

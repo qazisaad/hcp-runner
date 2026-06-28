@@ -158,6 +158,9 @@ export function computeContinuationGroupKey(provider: ProviderInstanceConfig): s
   if (provider.driver_kind === "codex" && provider.home) {
     return `codex:${provider.home}`;
   }
+  if (provider.driver_kind === "claude" && provider.home) {
+    return `claude:${provider.home}`;
+  }
   return `driver:${provider.driver_kind}`;
 }
 
