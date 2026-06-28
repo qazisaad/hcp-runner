@@ -1,0 +1,49 @@
+{
+  "id": "message-local-action-response",
+  "type": "local.action.response",
+  "version": "hcp.v0",
+  "sent_at": "2026-01-01T00:00:00.000Z",
+  "payload": {
+    "request_id": "local-action-shell-1",
+    "action": "local.shell.exec",
+    "status": "completed",
+    "completed_at": "2026-01-01T00:00:03.000Z",
+    "attribution": {
+      "session_id": "session-1",
+      "turn_id": "turn-1",
+      "workspace_id": "workspace-1",
+      "provider_instance_id": "provider-1",
+      "run_id": "run-1"
+    },
+    "lease": {
+      "lease_id": "local-lease-shell",
+      "capability_id": "shell",
+      "scope": "workspace",
+      "run_id": "run-1",
+      "hcp_session_id": "session-1",
+      "execution_host_id": "host-1",
+      "provider_instance_id": "provider-1",
+      "workspace_id": "workspace-1"
+    },
+    "output": {
+      "executable": "npm",
+      "argv": ["test"],
+      "cwd": "/tmp/workspace",
+      "exit_code": 0,
+      "signal": null,
+      "stdout": "ok\n",
+      "stderr": "",
+      "timed_out": false
+    },
+    "audit_events": {
+      "started": {
+        "event_type": "local_capability.action.started",
+        "sequence": 10
+      },
+      "completed": {
+        "event_type": "local_capability.action.completed",
+        "sequence": 11
+      }
+    }
+  }
+}

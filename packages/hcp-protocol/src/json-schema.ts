@@ -180,7 +180,8 @@ export function createHcpMessageJsonSchema(): JsonSchema {
 
   schema.$id = HCP_MESSAGE_JSON_SCHEMA_ID;
   schema.title = "HCP protocol message";
-  schema.description = "JSON Schema for known hcp.v0 protocol messages.";
+  schema.description =
+    "Structural JSON Schema for known hcp.v0 protocol messages. Runtime parsers enforce additional cross-field invariants such as lease-to-attribution equality.";
   schema.oneOf = expandedMessageSchemas;
 
   patchStreamableHttpMcpUrlSchema(schema);

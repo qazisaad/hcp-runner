@@ -1,0 +1,51 @@
+{
+  "id": "message-local-action-lease-binding-mismatch",
+  "type": "local.action.request",
+  "version": "hcp.v0",
+  "sent_at": "2026-01-01T00:00:00.000Z",
+  "payload": {
+    "request_id": "local-action-read-bad",
+    "action": "local.filesystem.read",
+    "issued_at": "2026-01-01T00:00:01.000Z",
+    "attribution": {
+      "session_id": "session-1",
+      "turn_id": "turn-1",
+      "workspace_id": "workspace-1",
+      "provider_instance_id": "provider-1",
+      "run_id": "run-1"
+    },
+    "lease": {
+      "lease_id": "local-lease-read",
+      "capability_id": "git",
+      "scope": "workspace_read",
+      "run_id": "run-1",
+      "hcp_session_id": "session-1",
+      "execution_host_id": "host-1",
+      "provider_instance_id": "provider-1",
+      "workspace_id": "workspace-1"
+    },
+    "sandbox": {
+      "mode": "workspace_write",
+      "workspace_root": "/tmp/workspace",
+      "cwd": "/tmp/workspace",
+      "requires_workspace_containment": true
+    },
+    "approval": {
+      "status": "not_required"
+    },
+    "output_limits": {
+      "content_bytes": 65536
+    },
+    "cancellation": {
+      "cancellable": false
+    },
+    "audit": {
+      "started_event_type": "local_capability.action.started",
+      "completed_event_type": "local_capability.action.completed",
+      "failed_event_type": "local_capability.action.failed"
+    },
+    "input": {
+      "path": "README.md"
+    }
+  }
+}

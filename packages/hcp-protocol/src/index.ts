@@ -27,6 +27,12 @@ export const CONTROL_PLANE_COMMAND_MESSAGE_TYPES = [
 
 export const COMMAND_ACK_MESSAGE_TYPES = ["hcp.command.ack", "hcp.command.nack"] as const;
 
+export const LOCAL_ACTION_MESSAGE_TYPES = [
+  "local.action.request",
+  "local.action.response",
+  "local.action.error",
+] as const;
+
 export const RUNTIME_EVENT_MESSAGE_TYPES = ["harness.event"] as const;
 
 export const KNOWN_HCP_EVENT_TYPES = [
@@ -104,6 +110,7 @@ export const KNOWN_HCP_EVENT_TYPES = [
 export type HostLifecycleMessageType = (typeof HOST_LIFECYCLE_MESSAGE_TYPES)[number];
 export type ControlPlaneCommandMessageType = (typeof CONTROL_PLANE_COMMAND_MESSAGE_TYPES)[number];
 export type CommandAckMessageType = (typeof COMMAND_ACK_MESSAGE_TYPES)[number];
+export type LocalActionMessageType = (typeof LOCAL_ACTION_MESSAGE_TYPES)[number];
 export type RuntimeEventMessageType = (typeof RUNTIME_EVENT_MESSAGE_TYPES)[number];
 export type KnownHcpEventType = (typeof KNOWN_HCP_EVENT_TYPES)[number];
 export type ProviderExtensionEventType = `provider.${string}`;
@@ -397,6 +404,341 @@ export type ToolServersDetachPayload = {
   session_id: string;
   names: string[];
   reason?: string;
+};
+
+export const LOCAL_ACTION_TYPES = [
+  "local.filesystem.read",
+  "local.filesystem.list",
+  "local.filesystem.write",
+  "local.filesystem.patch",
+  "local.git.status",
+  "local.git.diff",
+  "local.shell.exec",
+  "local.dev_server.start",
+  "local.dev_server.stop",
+] as const;
+
+export type LocalActionType = (typeof LOCAL_ACTION_TYPES)[number];
+export type LocalActionProtocolCapabilityId = "filesystem" | "git" | "shell" | "dev_server";
+
+export type LocalActionAttribution = {
+  session_id: string;
+  turn_id: string;
+  workspace_id: string;
+  provider_instance_id: string;
+  run_id: string;
+};
+
+export type LocalActionLeaseBinding = {
+  lease_id: string;
+  capability_id: LocalActionProtocolCapabilityId;
+  scope: string;
+  run_id: string;
+  hcp_session_id: string;
+  execution_host_id: string;
+  provider_instance_id: string;
+  workspace_id: string;
+  expires_at?: string;
+};
+
+export type LocalActionSandboxRequirements = {
+  mode: HcpSessionStartPayload["sandbox_mode"];
+  workspace_root: string;
+  cwd: string;
+  requires_workspace_containment: boolean;
+};
+
+export type LocalActionOutputLimits = {
+  content_bytes?: number;
+  entries?: number;
+  status_bytes?: number;
+  diff_bytes?: number;
+  stdout_bytes?: number;
+  stderr_bytes?: number;
+};
+
+export type LocalActionCancellation = {
+  cancellable: boolean;
+  timeout_ms?: number;
+  token?: string;
+};
+
+export type LocalActionApprovalBinding =
+  | {
+      status: "not_required";
+    }
+  | {
+      status: "approved";
+      request_id: string;
+      action_hash: string;
+      decision: "accept" | "accept_for_session";
+      actor_id: string;
+      approved_at: string;
+    };
+
+export type LocalActionAuditMapping = {
+  started_event_type: "local_capability.action.started";
+  completed_event_type: "local_capability.action.completed";
+  failed_event_type: "local_capability.action.failed";
+};
+
+export type LocalActionAuditEventRef = {
+  event_type:
+    | "local_capability.action.started"
+    | "local_capability.action.completed"
+    | "local_capability.action.failed";
+  sequence?: number;
+};
+
+export type LocalActionResponseAuditEvents = {
+  started?: LocalActionAuditEventRef;
+  completed: LocalActionAuditEventRef;
+};
+
+export type LocalActionErrorAuditEvents = {
+  started?: LocalActionAuditEventRef;
+  failed: LocalActionAuditEventRef;
+};
+
+export type LocalFilesystemReadInput = {
+  path: string;
+  encoding?: "utf8" | "base64";
+  range?: {
+    start?: number;
+    length?: number;
+  };
+};
+
+export type LocalFilesystemListInput = {
+  path: string;
+  recursive?: boolean;
+  include_hidden?: boolean;
+  max_depth?: number;
+};
+
+export type LocalFilesystemWriteInput = {
+  path: string;
+  content: string;
+  encoding?: "utf8" | "base64";
+  mode: "create" | "overwrite";
+  create_parents: boolean;
+  expected_base_hash?: string;
+};
+
+export type LocalFilesystemPatchInput = {
+  path: string;
+  expected_base_hash: string;
+  patch: {
+    format: "unified_diff";
+    content: string;
+  };
+  create_if_missing?: boolean;
+};
+
+export type LocalGitStatusInput = {
+  porcelain_version: "v1" | "v2";
+  include_branch?: boolean;
+};
+
+export type LocalGitDiffInput = {
+  paths?: string[];
+  staged?: boolean;
+  base_ref?: string;
+};
+
+export type LocalShellExecInput = {
+  executable: string;
+  argv: string[];
+  cwd: string;
+  use_shell: boolean;
+  env?: Record<string, string>;
+  stdin?: string;
+};
+
+export type LocalDevServerStartInput = {
+  server_id: string;
+  executable: string;
+  argv: string[];
+  cwd: string;
+  host: "127.0.0.1" | "localhost";
+  port: number;
+  use_shell: boolean;
+  env?: Record<string, string>;
+  readiness?: {
+    url?: string;
+    timeout_ms: number;
+  };
+};
+
+export type LocalDevServerStopInput = {
+  server_id: string;
+  signal?: "SIGTERM" | "SIGKILL";
+  timeout_ms?: number;
+};
+
+export type LocalActionRequestBase<TAction extends LocalActionType, TInput> = {
+  request_id: string;
+  action: TAction;
+  issued_at: string;
+  attribution: LocalActionAttribution;
+  lease: LocalActionLeaseBinding;
+  sandbox: LocalActionSandboxRequirements;
+  approval: LocalActionApprovalBinding;
+  output_limits: LocalActionOutputLimits;
+  cancellation: LocalActionCancellation;
+  audit: LocalActionAuditMapping;
+  input: TInput;
+};
+
+export type LocalFilesystemReadRequestPayload = LocalActionRequestBase<"local.filesystem.read", LocalFilesystemReadInput>;
+export type LocalFilesystemListRequestPayload = LocalActionRequestBase<"local.filesystem.list", LocalFilesystemListInput>;
+export type LocalFilesystemWriteRequestPayload = LocalActionRequestBase<"local.filesystem.write", LocalFilesystemWriteInput>;
+export type LocalFilesystemPatchRequestPayload = LocalActionRequestBase<"local.filesystem.patch", LocalFilesystemPatchInput>;
+export type LocalGitStatusRequestPayload = LocalActionRequestBase<"local.git.status", LocalGitStatusInput>;
+export type LocalGitDiffRequestPayload = LocalActionRequestBase<"local.git.diff", LocalGitDiffInput>;
+export type LocalShellExecRequestPayload = LocalActionRequestBase<"local.shell.exec", LocalShellExecInput>;
+export type LocalDevServerStartRequestPayload = LocalActionRequestBase<"local.dev_server.start", LocalDevServerStartInput>;
+export type LocalDevServerStopRequestPayload = LocalActionRequestBase<"local.dev_server.stop", LocalDevServerStopInput>;
+
+export type LocalActionRequestPayload =
+  | LocalFilesystemReadRequestPayload
+  | LocalFilesystemListRequestPayload
+  | LocalFilesystemWriteRequestPayload
+  | LocalFilesystemPatchRequestPayload
+  | LocalGitStatusRequestPayload
+  | LocalGitDiffRequestPayload
+  | LocalShellExecRequestPayload
+  | LocalDevServerStartRequestPayload
+  | LocalDevServerStopRequestPayload;
+
+export type LocalFilesystemReadOutput = {
+  path: string;
+  content: string;
+  encoding: "utf8" | "base64";
+  hash: string;
+  truncated?: boolean;
+};
+
+export type LocalFilesystemListOutput = {
+  path: string;
+  entries: Array<{
+    name: string;
+    type: "file" | "directory" | "other";
+  }>;
+  truncated?: boolean;
+};
+
+export type LocalFilesystemWriteOutput = {
+  path: string;
+  bytes_written: number;
+  new_hash: string;
+};
+
+export type LocalFilesystemPatchOutput = {
+  path: string;
+  changed: boolean;
+  new_hash: string;
+};
+
+export type LocalGitStatusOutput = {
+  porcelain: string;
+  branch?: string;
+  truncated?: boolean;
+};
+
+export type LocalGitDiffOutput = {
+  diff: string;
+  truncated?: boolean;
+};
+
+export type LocalShellExecOutput = {
+  executable: string;
+  argv: string[];
+  cwd: string;
+  exit_code: number | null;
+  signal?: string | null;
+  stdout: string;
+  stderr: string;
+  timed_out: boolean;
+  stdout_truncated?: boolean;
+  stderr_truncated?: boolean;
+};
+
+export type LocalDevServerStartOutput = {
+  server_id: string;
+  pid: number;
+  host: string;
+  port: number;
+  cwd: string;
+  started_at: string;
+  url?: string;
+};
+
+export type LocalDevServerStopOutput = {
+  server_id: string;
+  stopped_at: string;
+};
+
+export type LocalActionResponseBase<TAction extends LocalActionType, TOutput> = {
+  request_id: string;
+  action: TAction;
+  status: "completed";
+  completed_at: string;
+  attribution: LocalActionAttribution;
+  lease: LocalActionLeaseBinding;
+  output: TOutput;
+  audit_events: LocalActionResponseAuditEvents;
+};
+
+export type LocalActionResponsePayload =
+  | LocalActionResponseBase<"local.filesystem.read", LocalFilesystemReadOutput>
+  | LocalActionResponseBase<"local.filesystem.list", LocalFilesystemListOutput>
+  | LocalActionResponseBase<"local.filesystem.write", LocalFilesystemWriteOutput>
+  | LocalActionResponseBase<"local.filesystem.patch", LocalFilesystemPatchOutput>
+  | LocalActionResponseBase<"local.git.status", LocalGitStatusOutput>
+  | LocalActionResponseBase<"local.git.diff", LocalGitDiffOutput>
+  | LocalActionResponseBase<"local.shell.exec", LocalShellExecOutput>
+  | LocalActionResponseBase<"local.dev_server.start", LocalDevServerStartOutput>
+  | LocalActionResponseBase<"local.dev_server.stop", LocalDevServerStopOutput>;
+
+export type LocalActionErrorCode =
+  | "local_capability_lease_missing"
+  | "local_capability_lease_expired"
+  | "local_capability_lease_revoked"
+  | "local_capability_session_mismatch"
+  | "local_capability_workspace_mismatch"
+  | "local_capability_provider_mismatch"
+  | "local_capability_scope_not_granted"
+  | "local_capability_sandbox_denied"
+  | "local_capability_approval_required"
+  | "local_capability_approval_mismatch"
+  | "local_capability_path_denied"
+  | "local_capability_expected_hash_mismatch"
+  | "local_capability_output_limit_exceeded"
+  | "local_capability_timeout"
+  | "local_capability_cancelled"
+  | "local_capability_command_denied"
+  | "local_capability_process_failed"
+  | "local_capability_dev_server_exists"
+  | "local_capability_dev_server_not_found"
+  | "local_capability_action_failed";
+
+export type LocalActionError = {
+  code: LocalActionErrorCode;
+  message: string;
+  retryable: boolean;
+  details?: Record<string, unknown>;
+};
+
+export type LocalActionErrorPayload = {
+  request_id: string;
+  action: LocalActionType;
+  status: "failed" | "cancelled" | "timed_out";
+  failed_at: string;
+  attribution: LocalActionAttribution;
+  lease?: LocalActionLeaseBinding;
+  error: LocalActionError;
+  audit_events: LocalActionErrorAuditEvents;
 };
 
 export type HarnessUsageSnapshot = {
@@ -837,6 +1179,776 @@ export const toolServersDetachPayloadSchema = z
     reason: nonEmptyStringSchema.optional(),
   })
   .strict();
+
+const localActionProtocolCapabilityIdSchema = z.enum(["filesystem", "git", "shell", "dev_server"]);
+const localActionTypeSchema = z.enum(LOCAL_ACTION_TYPES);
+const localActionErrorCodeSchema = z.enum([
+  "local_capability_lease_missing",
+  "local_capability_lease_expired",
+  "local_capability_lease_revoked",
+  "local_capability_session_mismatch",
+  "local_capability_workspace_mismatch",
+  "local_capability_provider_mismatch",
+  "local_capability_scope_not_granted",
+  "local_capability_sandbox_denied",
+  "local_capability_approval_required",
+  "local_capability_approval_mismatch",
+  "local_capability_path_denied",
+  "local_capability_expected_hash_mismatch",
+  "local_capability_output_limit_exceeded",
+  "local_capability_timeout",
+  "local_capability_cancelled",
+  "local_capability_command_denied",
+  "local_capability_process_failed",
+  "local_capability_dev_server_exists",
+  "local_capability_dev_server_not_found",
+  "local_capability_action_failed",
+]);
+
+const localActionAttributionSchema = z
+  .object({
+    session_id: nonEmptyStringSchema,
+    turn_id: nonEmptyStringSchema,
+    workspace_id: nonEmptyStringSchema,
+    provider_instance_id: nonEmptyStringSchema,
+    run_id: nonEmptyStringSchema,
+  })
+  .strict();
+
+const localActionLeaseBindingSchema = z
+  .object({
+    lease_id: nonEmptyStringSchema,
+    capability_id: localActionProtocolCapabilityIdSchema,
+    scope: nonEmptyStringSchema,
+    run_id: nonEmptyStringSchema,
+    hcp_session_id: nonEmptyStringSchema,
+    execution_host_id: nonEmptyStringSchema,
+    provider_instance_id: nonEmptyStringSchema,
+    workspace_id: nonEmptyStringSchema,
+    expires_at: timestampSchema.optional(),
+  })
+  .strict();
+
+const localFilesystemReadLeaseBindingSchema = localActionLeaseBindingSchema.extend({
+  capability_id: z.literal("filesystem"),
+  scope: z.literal("workspace_read"),
+});
+const localFilesystemWriteLeaseBindingSchema = localActionLeaseBindingSchema.extend({
+  capability_id: z.literal("filesystem"),
+  scope: z.literal("workspace_write"),
+});
+const localGitReadLeaseBindingSchema = localActionLeaseBindingSchema.extend({
+  capability_id: z.literal("git"),
+  scope: z.literal("workspace_read"),
+});
+const localShellLeaseBindingSchema = localActionLeaseBindingSchema.extend({
+  capability_id: z.literal("shell"),
+  scope: z.literal("workspace"),
+});
+const localDevServerLeaseBindingSchema = localActionLeaseBindingSchema.extend({
+  capability_id: z.literal("dev_server"),
+  scope: z.literal("workspace"),
+});
+
+const localActionSandboxRequirementsSchema = z
+  .object({
+    mode: z.enum(["read_only", "workspace_write", "danger_full_access"]),
+    workspace_root: nonEmptyStringSchema,
+    cwd: nonEmptyStringSchema,
+    requires_workspace_containment: z.literal(true),
+  })
+  .strict();
+
+const localActionOutputLimitsSchema = z
+  .object({
+    content_bytes: z.number().int().positive().optional(),
+    entries: z.number().int().positive().optional(),
+    status_bytes: z.number().int().positive().optional(),
+    diff_bytes: z.number().int().positive().optional(),
+    stdout_bytes: z.number().int().positive().optional(),
+    stderr_bytes: z.number().int().positive().optional(),
+  })
+  .strict();
+
+const localFilesystemReadOutputLimitsSchema = localActionOutputLimitsSchema.extend({
+  content_bytes: z.number().int().positive(),
+});
+const localFilesystemListOutputLimitsSchema = localActionOutputLimitsSchema.extend({
+  entries: z.number().int().positive(),
+});
+const localGitStatusOutputLimitsSchema = localActionOutputLimitsSchema.extend({
+  status_bytes: z.number().int().positive(),
+});
+const localGitDiffOutputLimitsSchema = localActionOutputLimitsSchema.extend({
+  diff_bytes: z.number().int().positive(),
+});
+const localShellOutputLimitsSchema = localActionOutputLimitsSchema.extend({
+  stdout_bytes: z.number().int().positive(),
+  stderr_bytes: z.number().int().positive(),
+});
+
+const localActionCancellationSchema = z
+  .object({
+    cancellable: z.boolean(),
+    timeout_ms: z.number().int().positive().optional(),
+    token: nonEmptyStringSchema.optional(),
+  })
+  .strict();
+
+const localActionApprovalBindingSchema = z.discriminatedUnion("status", [
+  z
+    .object({
+      status: z.literal("not_required"),
+    })
+    .strict(),
+  z
+    .object({
+      status: z.literal("approved"),
+      request_id: nonEmptyStringSchema,
+      action_hash: nonEmptyStringSchema,
+      decision: z.enum(["accept", "accept_for_session"]),
+      actor_id: nonEmptyStringSchema,
+      approved_at: timestampSchema,
+    })
+    .strict(),
+]);
+
+const localActionApprovedBindingSchema = z
+  .object({
+    status: z.literal("approved"),
+    request_id: nonEmptyStringSchema,
+    action_hash: nonEmptyStringSchema,
+    decision: z.enum(["accept", "accept_for_session"]),
+    actor_id: nonEmptyStringSchema,
+    approved_at: timestampSchema,
+  })
+  .strict();
+
+const localActionAuditMappingSchema = z
+  .object({
+    started_event_type: z.literal("local_capability.action.started"),
+    completed_event_type: z.literal("local_capability.action.completed"),
+    failed_event_type: z.literal("local_capability.action.failed"),
+  })
+  .strict();
+
+const localActionAuditEventRefSchema = z
+  .object({
+    event_type: z.enum([
+      "local_capability.action.started",
+      "local_capability.action.completed",
+      "local_capability.action.failed",
+    ]),
+    sequence: z.number().int().positive().optional(),
+  })
+  .strict();
+
+const localActionStartedAuditEventRefSchema = localActionAuditEventRefSchema.extend({
+  event_type: z.literal("local_capability.action.started"),
+});
+const localActionCompletedAuditEventRefSchema = localActionAuditEventRefSchema.extend({
+  event_type: z.literal("local_capability.action.completed"),
+});
+const localActionFailedAuditEventRefSchema = localActionAuditEventRefSchema.extend({
+  event_type: z.literal("local_capability.action.failed"),
+});
+
+const localActionResponseAuditEventsSchema = z
+  .object({
+    started: localActionStartedAuditEventRefSchema.optional(),
+    completed: localActionCompletedAuditEventRefSchema,
+  })
+  .strict();
+
+const localActionErrorAuditEventsSchema = z
+  .object({
+    started: localActionStartedAuditEventRefSchema.optional(),
+    failed: localActionFailedAuditEventRefSchema,
+  })
+  .strict();
+
+const localFilesystemReadInputSchema = z
+  .object({
+    path: nonEmptyStringSchema,
+    encoding: z.enum(["utf8", "base64"]).optional(),
+    range: z
+      .object({
+        start: z.number().int().nonnegative().optional(),
+        length: z.number().int().positive().optional(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+
+const localFilesystemListInputSchema = z
+  .object({
+    path: nonEmptyStringSchema,
+    recursive: z.boolean().optional(),
+    include_hidden: z.boolean().optional(),
+    max_depth: z.number().int().positive().optional(),
+  })
+  .strict();
+
+const localFilesystemWriteInputSchema = z
+  .object({
+    path: nonEmptyStringSchema,
+    content: z.string(),
+    encoding: z.enum(["utf8", "base64"]).optional(),
+    mode: z.enum(["create", "overwrite"]),
+    create_parents: z.boolean(),
+    expected_base_hash: nonEmptyStringSchema.optional(),
+  })
+  .strict()
+  .superRefine((input, context) => {
+    if (input.mode === "overwrite" && input.expected_base_hash === undefined) {
+      context.addIssue({
+        code: "custom",
+        path: ["expected_base_hash"],
+        message: "Filesystem overwrite requests must bind an expected base hash.",
+      });
+    }
+  });
+
+const localFilesystemPatchInputSchema = z
+  .object({
+    path: nonEmptyStringSchema,
+    expected_base_hash: nonEmptyStringSchema,
+    patch: z
+      .object({
+        format: z.literal("unified_diff"),
+        content: nonEmptyStringSchema,
+      })
+      .strict(),
+    create_if_missing: z.boolean().optional(),
+  })
+  .strict();
+
+const localGitStatusInputSchema = z
+  .object({
+    porcelain_version: z.enum(["v1", "v2"]),
+    include_branch: z.boolean().optional(),
+  })
+  .strict();
+
+const localGitDiffInputSchema = z
+  .object({
+    paths: z.array(nonEmptyStringSchema).optional(),
+    staged: z.boolean().optional(),
+    base_ref: nonEmptyStringSchema.optional(),
+  })
+  .strict();
+
+const localShellExecInputSchema = z
+  .object({
+    executable: nonEmptyStringSchema,
+    argv: z.array(z.string()),
+    cwd: nonEmptyStringSchema,
+    use_shell: z.boolean(),
+    env: stringRecordSchema.optional(),
+    stdin: z.string().optional(),
+  })
+  .strict();
+
+const localDevServerStartInputSchema = z
+  .object({
+    server_id: nonEmptyStringSchema,
+    executable: nonEmptyStringSchema,
+    argv: z.array(z.string()),
+    cwd: nonEmptyStringSchema,
+    host: z.enum(["127.0.0.1", "localhost"]),
+    port: z.number().int().min(1).max(65_535),
+    use_shell: z.boolean(),
+    env: stringRecordSchema.optional(),
+    readiness: z
+      .object({
+        url: nonEmptyStringSchema.optional(),
+        timeout_ms: z.number().int().positive(),
+      })
+      .strict()
+      .optional(),
+  })
+  .strict();
+
+const localDevServerStopInputSchema = z
+  .object({
+    server_id: nonEmptyStringSchema,
+    signal: z.enum(["SIGTERM", "SIGKILL"]).optional(),
+    timeout_ms: z.number().int().positive().optional(),
+  })
+  .strict();
+
+const localActionRequestSharedShape = {
+  request_id: nonEmptyStringSchema,
+  issued_at: timestampSchema,
+  attribution: localActionAttributionSchema,
+  lease: localActionLeaseBindingSchema,
+  sandbox: localActionSandboxRequirementsSchema,
+  approval: localActionApprovalBindingSchema,
+  output_limits: localActionOutputLimitsSchema,
+  cancellation: localActionCancellationSchema,
+  audit: localActionAuditMappingSchema,
+};
+
+export const localFilesystemReadRequestPayloadSchema = z
+  .object({
+    ...localActionRequestSharedShape,
+    action: z.literal("local.filesystem.read"),
+    lease: localFilesystemReadLeaseBindingSchema,
+    output_limits: localFilesystemReadOutputLimitsSchema,
+    input: localFilesystemReadInputSchema,
+  })
+  .strict();
+export const localFilesystemListRequestPayloadSchema = z
+  .object({
+    ...localActionRequestSharedShape,
+    action: z.literal("local.filesystem.list"),
+    lease: localFilesystemReadLeaseBindingSchema,
+    output_limits: localFilesystemListOutputLimitsSchema,
+    input: localFilesystemListInputSchema,
+  })
+  .strict();
+export const localFilesystemWriteRequestPayloadSchema = z
+  .object({
+    ...localActionRequestSharedShape,
+    action: z.literal("local.filesystem.write"),
+    lease: localFilesystemWriteLeaseBindingSchema,
+    input: localFilesystemWriteInputSchema,
+  })
+  .strict();
+export const localFilesystemPatchRequestPayloadSchema = z
+  .object({
+    ...localActionRequestSharedShape,
+    action: z.literal("local.filesystem.patch"),
+    lease: localFilesystemWriteLeaseBindingSchema,
+    input: localFilesystemPatchInputSchema,
+  })
+  .strict();
+export const localGitStatusRequestPayloadSchema = z
+  .object({
+    ...localActionRequestSharedShape,
+    action: z.literal("local.git.status"),
+    lease: localGitReadLeaseBindingSchema,
+    output_limits: localGitStatusOutputLimitsSchema,
+    input: localGitStatusInputSchema,
+  })
+  .strict();
+export const localGitDiffRequestPayloadSchema = z
+  .object({
+    ...localActionRequestSharedShape,
+    action: z.literal("local.git.diff"),
+    lease: localGitReadLeaseBindingSchema,
+    output_limits: localGitDiffOutputLimitsSchema,
+    input: localGitDiffInputSchema,
+  })
+  .strict();
+export const localShellExecRequestPayloadSchema = z
+  .object({
+    ...localActionRequestSharedShape,
+    action: z.literal("local.shell.exec"),
+    lease: localShellLeaseBindingSchema,
+    approval: localActionApprovedBindingSchema,
+    output_limits: localShellOutputLimitsSchema,
+    input: localShellExecInputSchema,
+  })
+  .strict();
+export const localDevServerStartRequestPayloadSchema = z
+  .object({
+    ...localActionRequestSharedShape,
+    action: z.literal("local.dev_server.start"),
+    lease: localDevServerLeaseBindingSchema,
+    approval: localActionApprovedBindingSchema,
+    input: localDevServerStartInputSchema,
+  })
+  .strict();
+export const localDevServerStopRequestPayloadSchema = z
+  .object({
+    ...localActionRequestSharedShape,
+    action: z.literal("local.dev_server.stop"),
+    lease: localDevServerLeaseBindingSchema,
+    input: localDevServerStopInputSchema,
+  })
+  .strict();
+
+export const localActionRequestPayloadSchema = z
+  .discriminatedUnion("action", [
+    localFilesystemReadRequestPayloadSchema,
+    localFilesystemListRequestPayloadSchema,
+    localFilesystemWriteRequestPayloadSchema,
+    localFilesystemPatchRequestPayloadSchema,
+    localGitStatusRequestPayloadSchema,
+    localGitDiffRequestPayloadSchema,
+    localShellExecRequestPayloadSchema,
+    localDevServerStartRequestPayloadSchema,
+    localDevServerStopRequestPayloadSchema,
+  ])
+  .superRefine(refineLocalActionContract);
+
+const localFilesystemReadOutputSchema = z
+  .object({
+    path: nonEmptyStringSchema,
+    content: z.string(),
+    encoding: z.enum(["utf8", "base64"]),
+    hash: nonEmptyStringSchema,
+    truncated: z.boolean().optional(),
+  })
+  .strict();
+
+const localFilesystemListOutputSchema = z
+  .object({
+    path: nonEmptyStringSchema,
+    entries: z.array(
+      z
+        .object({
+          name: nonEmptyStringSchema,
+          type: z.enum(["file", "directory", "other"]),
+        })
+        .strict(),
+    ),
+    truncated: z.boolean().optional(),
+  })
+  .strict();
+
+const localFilesystemWriteOutputSchema = z
+  .object({
+    path: nonEmptyStringSchema,
+    bytes_written: z.number().int().nonnegative(),
+    new_hash: nonEmptyStringSchema,
+  })
+  .strict();
+
+const localFilesystemPatchOutputSchema = z
+  .object({
+    path: nonEmptyStringSchema,
+    changed: z.boolean(),
+    new_hash: nonEmptyStringSchema,
+  })
+  .strict();
+
+const localGitStatusOutputSchema = z
+  .object({
+    porcelain: z.string(),
+    branch: nonEmptyStringSchema.optional(),
+    truncated: z.boolean().optional(),
+  })
+  .strict();
+
+const localGitDiffOutputSchema = z
+  .object({
+    diff: z.string(),
+    truncated: z.boolean().optional(),
+  })
+  .strict();
+
+const localShellExecOutputSchema = z
+  .object({
+    executable: nonEmptyStringSchema,
+    argv: z.array(z.string()),
+    cwd: nonEmptyStringSchema,
+    exit_code: z.number().int().nullable(),
+    signal: z.string().nullable().optional(),
+    stdout: z.string(),
+    stderr: z.string(),
+    timed_out: z.boolean(),
+    stdout_truncated: z.boolean().optional(),
+    stderr_truncated: z.boolean().optional(),
+  })
+  .strict();
+
+const localDevServerStartOutputSchema = z
+  .object({
+    server_id: nonEmptyStringSchema,
+    pid: z.number().int().positive(),
+    host: nonEmptyStringSchema,
+    port: z.number().int().min(1).max(65_535),
+    cwd: nonEmptyStringSchema,
+    started_at: timestampSchema,
+    url: nonEmptyStringSchema.optional(),
+  })
+  .strict();
+
+const localDevServerStopOutputSchema = z
+  .object({
+    server_id: nonEmptyStringSchema,
+    stopped_at: timestampSchema,
+  })
+  .strict();
+
+const localActionResponseSharedShape = {
+  request_id: nonEmptyStringSchema,
+  status: z.literal("completed"),
+  completed_at: timestampSchema,
+  attribution: localActionAttributionSchema,
+  lease: localActionLeaseBindingSchema,
+  audit_events: localActionResponseAuditEventsSchema,
+};
+
+export const localActionResponsePayloadSchema = z
+  .discriminatedUnion("action", [
+    z
+      .object({
+        ...localActionResponseSharedShape,
+        action: z.literal("local.filesystem.read"),
+        lease: localFilesystemReadLeaseBindingSchema,
+        output: localFilesystemReadOutputSchema,
+      })
+      .strict(),
+    z
+      .object({
+        ...localActionResponseSharedShape,
+        action: z.literal("local.filesystem.list"),
+        lease: localFilesystemReadLeaseBindingSchema,
+        output: localFilesystemListOutputSchema,
+      })
+      .strict(),
+    z
+      .object({
+        ...localActionResponseSharedShape,
+        action: z.literal("local.filesystem.write"),
+        lease: localFilesystemWriteLeaseBindingSchema,
+        output: localFilesystemWriteOutputSchema,
+      })
+      .strict(),
+    z
+      .object({
+        ...localActionResponseSharedShape,
+        action: z.literal("local.filesystem.patch"),
+        lease: localFilesystemWriteLeaseBindingSchema,
+        output: localFilesystemPatchOutputSchema,
+      })
+      .strict(),
+    z
+      .object({
+        ...localActionResponseSharedShape,
+        action: z.literal("local.git.status"),
+        lease: localGitReadLeaseBindingSchema,
+        output: localGitStatusOutputSchema,
+      })
+      .strict(),
+    z
+      .object({
+        ...localActionResponseSharedShape,
+        action: z.literal("local.git.diff"),
+        lease: localGitReadLeaseBindingSchema,
+        output: localGitDiffOutputSchema,
+      })
+      .strict(),
+    z
+      .object({
+        ...localActionResponseSharedShape,
+        action: z.literal("local.shell.exec"),
+        lease: localShellLeaseBindingSchema,
+        output: localShellExecOutputSchema,
+      })
+      .strict(),
+    z
+      .object({
+        ...localActionResponseSharedShape,
+        action: z.literal("local.dev_server.start"),
+        lease: localDevServerLeaseBindingSchema,
+        output: localDevServerStartOutputSchema,
+      })
+      .strict(),
+    z
+      .object({
+        ...localActionResponseSharedShape,
+        action: z.literal("local.dev_server.stop"),
+        lease: localDevServerLeaseBindingSchema,
+        output: localDevServerStopOutputSchema,
+      })
+      .strict(),
+  ])
+  .superRefine(refineLocalActionContract);
+
+export const localActionErrorSchema = z
+  .object({
+    code: localActionErrorCodeSchema,
+    message: nonEmptyStringSchema,
+    retryable: z.boolean(),
+    details: unknownRecordSchema.optional(),
+  })
+  .strict();
+
+export const localActionErrorPayloadSchema = z
+  .object({
+    request_id: nonEmptyStringSchema,
+    action: localActionTypeSchema,
+    status: z.enum(["failed", "cancelled", "timed_out"]),
+    failed_at: timestampSchema,
+    attribution: localActionAttributionSchema,
+    lease: localActionLeaseBindingSchema.optional(),
+    error: localActionErrorSchema,
+    audit_events: localActionErrorAuditEventsSchema,
+  })
+  .strict()
+  .superRefine(refineLocalActionErrorContract);
+
+type LocalActionContractPayload = {
+  action: LocalActionType;
+  attribution: z.output<typeof localActionAttributionSchema>;
+  lease: z.output<typeof localActionLeaseBindingSchema>;
+  sandbox?: z.output<typeof localActionSandboxRequirementsSchema>;
+  approval?: z.output<typeof localActionApprovalBindingSchema>;
+  output_limits?: z.output<typeof localActionOutputLimitsSchema>;
+};
+
+type LocalActionErrorContractPayload = {
+  action: LocalActionType;
+  attribution: z.output<typeof localActionAttributionSchema>;
+  lease?: z.output<typeof localActionLeaseBindingSchema> | undefined;
+  error: z.output<typeof localActionErrorSchema>;
+};
+
+function refineLocalActionContract(payload: LocalActionContractPayload, context: z.RefinementCtx): void {
+  if (payload.attribution.session_id !== payload.lease.hcp_session_id) {
+    addLocalActionIssue(context, ["lease", "hcp_session_id"], "Local action lease session must match request attribution.");
+  }
+  if (payload.attribution.workspace_id !== payload.lease.workspace_id) {
+    addLocalActionIssue(context, ["lease", "workspace_id"], "Local action lease workspace must match request attribution.");
+  }
+  if (payload.attribution.provider_instance_id !== payload.lease.provider_instance_id) {
+    addLocalActionIssue(context, ["lease", "provider_instance_id"], "Local action lease provider must match request attribution.");
+  }
+  if (payload.attribution.run_id !== payload.lease.run_id) {
+    addLocalActionIssue(context, ["lease", "run_id"], "Local action lease run must match request attribution.");
+  }
+
+  const expectedBinding: { capabilityId: LocalActionProtocolCapabilityId; scope: string } =
+    localActionExpectedBinding(payload.action);
+  if (payload.lease.capability_id !== expectedBinding.capabilityId) {
+    addLocalActionIssue(context, ["lease", "capability_id"], `Action '${payload.action}' must use the ${expectedBinding.capabilityId} capability.`);
+  }
+  if (payload.lease.scope !== expectedBinding.scope) {
+    addLocalActionIssue(context, ["lease", "scope"], `Action '${payload.action}' must use the ${expectedBinding.scope} scope.`);
+  }
+
+  if (payload.sandbox !== undefined && !payload.sandbox.requires_workspace_containment) {
+    addLocalActionIssue(context, ["sandbox", "requires_workspace_containment"], "Local actions must require workspace containment.");
+  }
+  if (payload.approval !== undefined && localActionRequiresApproval(payload.action) && payload.approval.status !== "approved") {
+    addLocalActionIssue(context, ["approval"], `Action '${payload.action}' requires an approved action hash binding.`);
+  }
+  if (payload.output_limits !== undefined) {
+    refineLocalActionOutputLimits(payload.action, payload.output_limits, context);
+  }
+}
+
+function refineLocalActionErrorContract(payload: LocalActionErrorContractPayload, context: z.RefinementCtx): void {
+  if (localActionErrorMayHaveRejectedBinding(payload.error.code)) {
+    return;
+  }
+  if (payload.lease === undefined) {
+    addLocalActionIssue(context, ["lease"], `Error code '${payload.error.code}' requires a validated lease binding.`);
+    return;
+  }
+  refineLocalActionContract(
+    {
+      action: payload.action,
+      attribution: payload.attribution,
+      lease: payload.lease,
+    },
+    context,
+  );
+}
+
+function addLocalActionIssue(context: z.RefinementCtx, path: Array<string | number>, message: string): void {
+  context.addIssue({
+    code: "custom",
+    path,
+    message,
+  });
+}
+
+function localActionErrorMayHaveRejectedBinding(code: LocalActionErrorCode): boolean {
+  switch (code) {
+    case "local_capability_lease_missing":
+    case "local_capability_lease_expired":
+    case "local_capability_lease_revoked":
+    case "local_capability_session_mismatch":
+    case "local_capability_workspace_mismatch":
+    case "local_capability_provider_mismatch":
+    case "local_capability_scope_not_granted":
+      return true;
+    case "local_capability_sandbox_denied":
+    case "local_capability_approval_required":
+    case "local_capability_approval_mismatch":
+    case "local_capability_path_denied":
+    case "local_capability_expected_hash_mismatch":
+    case "local_capability_output_limit_exceeded":
+    case "local_capability_timeout":
+    case "local_capability_cancelled":
+    case "local_capability_command_denied":
+    case "local_capability_process_failed":
+    case "local_capability_dev_server_exists":
+    case "local_capability_dev_server_not_found":
+    case "local_capability_action_failed":
+      return false;
+  }
+}
+
+function localActionExpectedBinding(action: LocalActionType): { capabilityId: LocalActionProtocolCapabilityId; scope: string } {
+  switch (action) {
+    case "local.filesystem.read":
+    case "local.filesystem.list":
+      return { capabilityId: "filesystem", scope: "workspace_read" };
+    case "local.filesystem.write":
+    case "local.filesystem.patch":
+      return { capabilityId: "filesystem", scope: "workspace_write" };
+    case "local.git.status":
+    case "local.git.diff":
+      return { capabilityId: "git", scope: "workspace_read" };
+    case "local.shell.exec":
+      return { capabilityId: "shell", scope: "workspace" };
+    case "local.dev_server.start":
+    case "local.dev_server.stop":
+      return { capabilityId: "dev_server", scope: "workspace" };
+  }
+}
+
+function localActionRequiresApproval(action: LocalActionType): boolean {
+  return action === "local.shell.exec" || action === "local.dev_server.start";
+}
+
+function refineLocalActionOutputLimits(
+  action: LocalActionType,
+  outputLimits: z.output<typeof localActionOutputLimitsSchema>,
+  context: z.RefinementCtx,
+): void {
+  switch (action) {
+    case "local.filesystem.read":
+      requireLocalActionOutputLimit(outputLimits.content_bytes, "content_bytes", action, context);
+      return;
+    case "local.filesystem.list":
+      requireLocalActionOutputLimit(outputLimits.entries, "entries", action, context);
+      return;
+    case "local.git.diff":
+      requireLocalActionOutputLimit(outputLimits.diff_bytes, "diff_bytes", action, context);
+      return;
+    case "local.git.status":
+      requireLocalActionOutputLimit(outputLimits.status_bytes, "status_bytes", action, context);
+      return;
+    case "local.shell.exec":
+      requireLocalActionOutputLimit(outputLimits.stdout_bytes, "stdout_bytes", action, context);
+      requireLocalActionOutputLimit(outputLimits.stderr_bytes, "stderr_bytes", action, context);
+      return;
+    case "local.filesystem.write":
+    case "local.filesystem.patch":
+    case "local.dev_server.start":
+    case "local.dev_server.stop":
+      return;
+  }
+}
+
+function requireLocalActionOutputLimit(
+  value: number | undefined,
+  field: keyof z.output<typeof localActionOutputLimitsSchema>,
+  action: LocalActionType,
+  context: z.RefinementCtx,
+): void {
+  if (value === undefined) {
+    addLocalActionIssue(context, ["output_limits", field], `Action '${action}' requires output limit '${field}'.`);
+  }
+}
 
 export const harnessUsageSnapshotSchema = z
   .object({
@@ -1420,6 +2532,18 @@ export const toolServersDetachMessageSchema = hcpTypedEnvelopeSchema(
   "tool_servers.detach",
   toolServersDetachPayloadSchema,
 );
+export const localActionRequestMessageSchema = hcpTypedEnvelopeSchema(
+  "local.action.request",
+  localActionRequestPayloadSchema,
+);
+export const localActionResponseMessageSchema = hcpTypedEnvelopeSchema(
+  "local.action.response",
+  localActionResponsePayloadSchema,
+);
+export const localActionErrorMessageSchema = hcpTypedEnvelopeSchema(
+  "local.action.error",
+  localActionErrorPayloadSchema,
+);
 export const hcpHarnessEventMessageSchema = hcpTypedEnvelopeSchema("harness.event", hcpHarnessEventPayloadSchema);
 
 export const hcpMessageSchema = z.discriminatedUnion("type", [
@@ -1437,6 +2561,9 @@ export const hcpMessageSchema = z.discriminatedUnion("type", [
   hcpApprovalRespondMessageSchema,
   hcpInputRespondMessageSchema,
   toolServersDetachMessageSchema,
+  localActionRequestMessageSchema,
+  localActionResponseMessageSchema,
+  localActionErrorMessageSchema,
   hcpHarnessEventMessageSchema,
 ]);
 
@@ -1459,6 +2586,9 @@ export type HcpSessionStopMessage = HcpEnvelope<"harness.session.stop", HcpSessi
 export type HcpApprovalRespondMessage = HcpEnvelope<"harness.approval.respond", HcpApprovalResponsePayload>;
 export type HcpInputRespondMessage = HcpEnvelope<"harness.input.respond", HcpInputResponsePayload>;
 export type ToolServersDetachMessage = HcpEnvelope<"tool_servers.detach", ToolServersDetachPayload>;
+export type LocalActionRequestMessage = HcpEnvelope<"local.action.request", LocalActionRequestPayload>;
+export type LocalActionResponseMessage = HcpEnvelope<"local.action.response", LocalActionResponsePayload>;
+export type LocalActionErrorMessage = HcpEnvelope<"local.action.error", LocalActionErrorPayload>;
 export type HcpHarnessEventMessage = HcpEnvelope<"harness.event", HcpHarnessEventPayload>;
 
 export type HcpMessage =
@@ -1476,6 +2606,9 @@ export type HcpMessage =
   | HcpApprovalRespondMessage
   | HcpInputRespondMessage
   | ToolServersDetachMessage
+  | LocalActionRequestMessage
+  | LocalActionResponseMessage
+  | LocalActionErrorMessage
   | HcpHarnessEventMessage;
 
 export type HcpKnownMessageType = HcpMessage["type"];
@@ -1546,6 +2679,18 @@ export function parseHcpSessionStartPayload(input: unknown): HcpSessionStartPayl
 
 export function parseHcpTurnSendPayload(input: unknown): HcpTurnSendPayload {
   return hcpTurnSendPayloadSchema.parse(input) as HcpTurnSendPayload;
+}
+
+export function parseLocalActionRequestPayload(input: unknown): LocalActionRequestPayload {
+  return localActionRequestPayloadSchema.parse(input) as LocalActionRequestPayload;
+}
+
+export function parseLocalActionResponsePayload(input: unknown): LocalActionResponsePayload {
+  return localActionResponsePayloadSchema.parse(input) as LocalActionResponsePayload;
+}
+
+export function parseLocalActionErrorPayload(input: unknown): LocalActionErrorPayload {
+  return localActionErrorPayloadSchema.parse(input) as LocalActionErrorPayload;
 }
 
 export function parseHcpHarnessEventPayload(input: unknown): HcpHarnessEventPayload {

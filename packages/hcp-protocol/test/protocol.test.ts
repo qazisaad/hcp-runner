@@ -14,9 +14,14 @@ import {
   parseHcpMessage,
   parseHcpSessionStartPayload,
   parseHcpTurnSendPayload,
+  parseLocalActionErrorPayload,
+  parseLocalActionRequestPayload,
+  parseLocalActionResponsePayload,
   parseMcpServerAttachment,
   type HcpEnvelope,
   type HcpHostHelloPayload,
+  type LocalActionRequestPayload,
+  type LocalActionResponsePayload,
   type LocalCapabilityLease,
   type McpServerAttachment,
 } from "../src/index.js";
@@ -85,6 +90,67 @@ const attachmentPayload: McpServerAttachment = {
     required_headers: ["x-hcp-session-id", "x-hcp-proof-signature"],
   },
   allowed_tools: ["read_status"],
+};
+
+const localActionRequestPayload: LocalActionRequestPayload = {
+  request_id: "local-action-1",
+  action: "local.filesystem.read",
+  issued_at: sentAt,
+  attribution: {
+    session_id: "session-1",
+    turn_id: "turn-1",
+    workspace_id: "workspace-1",
+    provider_instance_id: "provider-1",
+    run_id: "run_123",
+  },
+  lease: {
+    lease_id: "local_lease_123",
+    capability_id: "filesystem",
+    scope: "workspace_read",
+    run_id: "run_123",
+    hcp_session_id: "session-1",
+    execution_host_id: "host-local",
+    provider_instance_id: "provider-1",
+    workspace_id: "workspace-1",
+    expires_at: "2026-01-01T01:00:00.000Z",
+  },
+  sandbox: {
+    mode: "workspace_write",
+    workspace_root: "/tmp/workspace",
+    cwd: "/tmp/workspace",
+    requires_workspace_containment: true,
+  },
+  approval: { status: "not_required" },
+  output_limits: { content_bytes: 65_536 },
+  cancellation: { cancellable: false },
+  audit: {
+    started_event_type: "local_capability.action.started",
+    completed_event_type: "local_capability.action.completed",
+    failed_event_type: "local_capability.action.failed",
+  },
+  input: {
+    path: "README.md",
+    encoding: "utf8",
+  },
+};
+
+const localActionResponsePayload: LocalActionResponsePayload = {
+  request_id: "local-action-1",
+  action: "local.filesystem.read",
+  status: "completed",
+  completed_at: sentAt,
+  attribution: localActionRequestPayload.attribution,
+  lease: localActionRequestPayload.lease,
+  output: {
+    path: "README.md",
+    content: "hello",
+    encoding: "utf8",
+    hash: "sha256:abc",
+  },
+  audit_events: {
+    started: { event_type: "local_capability.action.started", sequence: 1 },
+    completed: { event_type: "local_capability.action.completed", sequence: 2 },
+  },
 };
 
 describe("HCP protocol runtime parsing", () => {
@@ -218,6 +284,98 @@ describe("HCP protocol runtime parsing", () => {
     );
 
     assert.equal(parseMcpServerAttachment(attachmentPayload).transport, "streamable_http");
+    assert.equal(parseLocalActionRequestPayload(localActionRequestPayload).action, "local.filesystem.read");
+    assert.equal(parseLocalActionResponsePayload(localActionResponsePayload).status, "completed");
+    assert.equal(
+      parseLocalActionErrorPayload({
+        request_id: "local-action-2",
+        action: "local.git.diff",
+        status: "failed",
+        failed_at: sentAt,
+        attribution: {
+          session_id: "session-1",
+          turn_id: "turn-1",
+          workspace_id: "workspace-1",
+          provider_instance_id: "provider-1",
+          run_id: "run_123",
+        },
+        lease: {
+          lease_id: "local_lease_456",
+          capability_id: "git",
+          scope: "workspace_read",
+          run_id: "run_123",
+          hcp_session_id: "session-1",
+          execution_host_id: "host-local",
+          provider_instance_id: "provider-1",
+          workspace_id: "workspace-1",
+        },
+        error: {
+          code: "local_capability_expected_hash_mismatch",
+          message: "The expected base hash did not match.",
+          retryable: false,
+        },
+        audit_events: { failed: { event_type: "local_capability.action.failed", sequence: 3 } },
+      }).error.code,
+      "local_capability_expected_hash_mismatch",
+    );
+    assert.equal(
+      parseLocalActionErrorPayload({
+        request_id: "local-action-3",
+        action: "local.filesystem.read",
+        status: "failed",
+        failed_at: sentAt,
+        attribution: localActionRequestPayload.attribution,
+        error: {
+          code: "local_capability_lease_missing",
+          message: "Local capability lease is missing.",
+          retryable: false,
+        },
+        audit_events: { failed: { event_type: "local_capability.action.failed", sequence: 4 } },
+      }).error.code,
+      "local_capability_lease_missing",
+    );
+  });
+
+  it("validates local action lease binding, approvals, and output limits", () => {
+    assertRejected(
+      {
+        ...localActionRequestPayload,
+        lease: {
+          ...localActionRequestPayload.lease,
+          hcp_session_id: "other-session",
+        },
+      },
+      parseLocalActionRequestPayload,
+    );
+
+    assertRejected(
+      {
+        ...localActionRequestPayload,
+        output_limits: {},
+      },
+      parseLocalActionRequestPayload,
+    );
+
+    assertRejected(
+      {
+        ...localActionRequestPayload,
+        action: "local.shell.exec",
+        lease: {
+          ...localActionRequestPayload.lease,
+          capability_id: "shell",
+          scope: "workspace",
+        },
+        input: {
+          executable: "npm",
+          argv: ["test"],
+          cwd: "/tmp/workspace",
+          use_shell: false,
+        },
+        output_limits: { stdout_bytes: 65_536, stderr_bytes: 65_536 },
+        approval: { status: "not_required" },
+      },
+      parseLocalActionRequestPayload,
+    );
   });
 
   it("exports one runtime schema per known event type", () => {

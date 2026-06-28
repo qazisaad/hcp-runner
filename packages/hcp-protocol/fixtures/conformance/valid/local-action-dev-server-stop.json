@@ -1,0 +1,54 @@
+{
+  "id": "message-local-dev-server-stop",
+  "type": "local.action.request",
+  "version": "hcp.v0",
+  "sent_at": "2026-01-01T00:00:00.000Z",
+  "payload": {
+    "request_id": "local-action-dev-stop-1",
+    "action": "local.dev_server.stop",
+    "issued_at": "2026-01-01T00:00:01.000Z",
+    "attribution": {
+      "session_id": "session-1",
+      "turn_id": "turn-1",
+      "workspace_id": "workspace-1",
+      "provider_instance_id": "provider-1",
+      "run_id": "run-1"
+    },
+    "lease": {
+      "lease_id": "local-lease-dev-server",
+      "capability_id": "dev_server",
+      "scope": "workspace",
+      "run_id": "run-1",
+      "hcp_session_id": "session-1",
+      "execution_host_id": "host-1",
+      "provider_instance_id": "provider-1",
+      "workspace_id": "workspace-1",
+      "expires_at": "2026-01-01T01:00:00.000Z"
+    },
+    "sandbox": {
+      "mode": "workspace_write",
+      "workspace_root": "/tmp/workspace",
+      "cwd": "/tmp/workspace",
+      "requires_workspace_containment": true
+    },
+    "approval": {
+      "status": "not_required"
+    },
+    "output_limits": {},
+    "cancellation": {
+      "cancellable": true,
+      "timeout_ms": 30000,
+      "token": "cancel-dev-stop-1"
+    },
+    "audit": {
+      "started_event_type": "local_capability.action.started",
+      "completed_event_type": "local_capability.action.completed",
+      "failed_event_type": "local_capability.action.failed"
+    },
+    "input": {
+      "server_id": "web",
+      "signal": "SIGTERM",
+      "timeout_ms": 30000
+    }
+  }
+}

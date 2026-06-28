@@ -1,0 +1,67 @@
+{
+  "id": "message-local-dev-server-start",
+  "type": "local.action.request",
+  "version": "hcp.v0",
+  "sent_at": "2026-01-01T00:00:00.000Z",
+  "payload": {
+    "request_id": "local-action-dev-start-1",
+    "action": "local.dev_server.start",
+    "issued_at": "2026-01-01T00:00:01.000Z",
+    "attribution": {
+      "session_id": "session-1",
+      "turn_id": "turn-1",
+      "workspace_id": "workspace-1",
+      "provider_instance_id": "provider-1",
+      "run_id": "run-1"
+    },
+    "lease": {
+      "lease_id": "local-lease-dev-server",
+      "capability_id": "dev_server",
+      "scope": "workspace",
+      "run_id": "run-1",
+      "hcp_session_id": "session-1",
+      "execution_host_id": "host-1",
+      "provider_instance_id": "provider-1",
+      "workspace_id": "workspace-1",
+      "expires_at": "2026-01-01T01:00:00.000Z"
+    },
+    "sandbox": {
+      "mode": "workspace_write",
+      "workspace_root": "/tmp/workspace",
+      "cwd": "/tmp/workspace",
+      "requires_workspace_containment": true
+    },
+    "approval": {
+      "status": "approved",
+      "request_id": "approval-2",
+      "action_hash": "sha256:dev-server",
+      "decision": "accept_for_session",
+      "actor_id": "user-1",
+      "approved_at": "2026-01-01T00:00:02.000Z"
+    },
+    "output_limits": {},
+    "cancellation": {
+      "cancellable": true,
+      "timeout_ms": 60000,
+      "token": "cancel-dev-start-1"
+    },
+    "audit": {
+      "started_event_type": "local_capability.action.started",
+      "completed_event_type": "local_capability.action.completed",
+      "failed_event_type": "local_capability.action.failed"
+    },
+    "input": {
+      "server_id": "web",
+      "executable": "npm",
+      "argv": ["run", "dev"],
+      "cwd": "/tmp/workspace",
+      "host": "127.0.0.1",
+      "port": 3000,
+      "use_shell": false,
+      "readiness": {
+        "url": "http://127.0.0.1:3000",
+        "timeout_ms": 30000
+      }
+    }
+  }
+}

@@ -16,7 +16,7 @@ HCP Runner is an early, pre-1.0 foundation. The protocol and runner core are imp
 
 Implemented today:
 
-- HCP v0 envelopes, message schemas, event types, and parser helpers.
+- HCP v0 envelopes, message schemas, event types, local action contracts, and parser helpers.
 - Public JSON Schema export, conformance fixtures, and a conformance CLI.
 - Runner CLI commands for `version`, `pair`, and `run`.
 - Reference pairing with single-use pairing codes, local credential storage, and short-lived connection tokens.
@@ -224,6 +224,8 @@ The Codex adapter does not yet expose these attachments to `codex exec`. HCP req
 ## Local Capability Leases
 
 Local capabilities are short-lived grants minted by the control plane and enforced by the runner. A lease is bound to a session, host, provider instance, and workspace.
+
+Local machine actions are HCP-native protocol contracts, not MCP tool calls. The protocol package defines `local.action.request`, `local.action.response`, and `local.action.error` envelopes for filesystem read/list/write/patch, Git status/diff, shell exec, and dev-server start/stop. Each request binds session and turn attribution, lease identity, sandbox requirements, output limits, cancellation behavior, approval action hashes when required, and the expected local capability audit event mapping.
 
 The runner validates:
 

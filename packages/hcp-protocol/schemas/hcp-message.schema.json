@@ -1721,6 +1721,5021 @@
         },
         "type": {
           "type": "string",
+          "const": "local.action.request"
+        },
+        "version": {
+          "type": "string",
+          "const": "hcp.v0"
+        },
+        "sent_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        "payload": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "issued_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "attribution": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "turn_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "session_id",
+                    "turn_id",
+                    "workspace_id",
+                    "provider_instance_id",
+                    "run_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "lease": {
+                  "type": "object",
+                  "properties": {
+                    "lease_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "capability_id": {
+                      "type": "string",
+                      "const": "filesystem"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "const": "workspace_read"
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hcp_session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "execution_host_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "lease_id",
+                    "capability_id",
+                    "scope",
+                    "run_id",
+                    "hcp_session_id",
+                    "execution_host_id",
+                    "provider_instance_id",
+                    "workspace_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "sandbox": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "read_only",
+                        "workspace_write",
+                        "danger_full_access"
+                      ]
+                    },
+                    "workspace_root": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "cwd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "requires_workspace_containment": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "workspace_root",
+                    "cwd",
+                    "requires_workspace_containment"
+                  ],
+                  "additionalProperties": false
+                },
+                "approval": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "const": "not_required"
+                        }
+                      },
+                      "required": [
+                        "status"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "const": "approved"
+                        },
+                        "request_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "action_hash": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "decision": {
+                          "type": "string",
+                          "enum": [
+                            "accept",
+                            "accept_for_session"
+                          ]
+                        },
+                        "actor_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "approved_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "request_id",
+                        "action_hash",
+                        "decision",
+                        "actor_id",
+                        "approved_at"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "output_limits": {
+                  "type": "object",
+                  "properties": {
+                    "content_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "entries": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "status_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "diff_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "stdout_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "stderr_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "content_bytes"
+                  ],
+                  "additionalProperties": false
+                },
+                "cancellation": {
+                  "type": "object",
+                  "properties": {
+                    "cancellable": {
+                      "type": "boolean"
+                    },
+                    "timeout_ms": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "token": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "cancellable"
+                  ],
+                  "additionalProperties": false
+                },
+                "audit": {
+                  "type": "object",
+                  "properties": {
+                    "started_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.started"
+                    },
+                    "completed_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.completed"
+                    },
+                    "failed_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.failed"
+                    }
+                  },
+                  "required": [
+                    "started_event_type",
+                    "completed_event_type",
+                    "failed_event_type"
+                  ],
+                  "additionalProperties": false
+                },
+                "action": {
+                  "type": "string",
+                  "const": "local.filesystem.read"
+                },
+                "input": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "encoding": {
+                      "type": "string",
+                      "enum": [
+                        "utf8",
+                        "base64"
+                      ]
+                    },
+                    "range": {
+                      "type": "object",
+                      "properties": {
+                        "start": {
+                          "type": "integer",
+                          "minimum": 0,
+                          "maximum": 9007199254740991
+                        },
+                        "length": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "path"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "request_id",
+                "issued_at",
+                "attribution",
+                "lease",
+                "sandbox",
+                "approval",
+                "output_limits",
+                "cancellation",
+                "audit",
+                "action",
+                "input"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "issued_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "attribution": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "turn_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "session_id",
+                    "turn_id",
+                    "workspace_id",
+                    "provider_instance_id",
+                    "run_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "lease": {
+                  "type": "object",
+                  "properties": {
+                    "lease_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "capability_id": {
+                      "type": "string",
+                      "const": "filesystem"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "const": "workspace_read"
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hcp_session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "execution_host_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "lease_id",
+                    "capability_id",
+                    "scope",
+                    "run_id",
+                    "hcp_session_id",
+                    "execution_host_id",
+                    "provider_instance_id",
+                    "workspace_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "sandbox": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "read_only",
+                        "workspace_write",
+                        "danger_full_access"
+                      ]
+                    },
+                    "workspace_root": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "cwd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "requires_workspace_containment": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "workspace_root",
+                    "cwd",
+                    "requires_workspace_containment"
+                  ],
+                  "additionalProperties": false
+                },
+                "approval": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "const": "not_required"
+                        }
+                      },
+                      "required": [
+                        "status"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "const": "approved"
+                        },
+                        "request_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "action_hash": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "decision": {
+                          "type": "string",
+                          "enum": [
+                            "accept",
+                            "accept_for_session"
+                          ]
+                        },
+                        "actor_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "approved_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "request_id",
+                        "action_hash",
+                        "decision",
+                        "actor_id",
+                        "approved_at"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "output_limits": {
+                  "type": "object",
+                  "properties": {
+                    "content_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "entries": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "status_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "diff_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "stdout_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "stderr_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "entries"
+                  ],
+                  "additionalProperties": false
+                },
+                "cancellation": {
+                  "type": "object",
+                  "properties": {
+                    "cancellable": {
+                      "type": "boolean"
+                    },
+                    "timeout_ms": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "token": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "cancellable"
+                  ],
+                  "additionalProperties": false
+                },
+                "audit": {
+                  "type": "object",
+                  "properties": {
+                    "started_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.started"
+                    },
+                    "completed_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.completed"
+                    },
+                    "failed_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.failed"
+                    }
+                  },
+                  "required": [
+                    "started_event_type",
+                    "completed_event_type",
+                    "failed_event_type"
+                  ],
+                  "additionalProperties": false
+                },
+                "action": {
+                  "type": "string",
+                  "const": "local.filesystem.list"
+                },
+                "input": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "recursive": {
+                      "type": "boolean"
+                    },
+                    "include_hidden": {
+                      "type": "boolean"
+                    },
+                    "max_depth": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "path"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "request_id",
+                "issued_at",
+                "attribution",
+                "lease",
+                "sandbox",
+                "approval",
+                "output_limits",
+                "cancellation",
+                "audit",
+                "action",
+                "input"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "issued_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "attribution": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "turn_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "session_id",
+                    "turn_id",
+                    "workspace_id",
+                    "provider_instance_id",
+                    "run_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "lease": {
+                  "type": "object",
+                  "properties": {
+                    "lease_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "capability_id": {
+                      "type": "string",
+                      "const": "filesystem"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "const": "workspace_write"
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hcp_session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "execution_host_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "lease_id",
+                    "capability_id",
+                    "scope",
+                    "run_id",
+                    "hcp_session_id",
+                    "execution_host_id",
+                    "provider_instance_id",
+                    "workspace_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "sandbox": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "read_only",
+                        "workspace_write",
+                        "danger_full_access"
+                      ]
+                    },
+                    "workspace_root": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "cwd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "requires_workspace_containment": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "workspace_root",
+                    "cwd",
+                    "requires_workspace_containment"
+                  ],
+                  "additionalProperties": false
+                },
+                "approval": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "const": "not_required"
+                        }
+                      },
+                      "required": [
+                        "status"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "const": "approved"
+                        },
+                        "request_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "action_hash": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "decision": {
+                          "type": "string",
+                          "enum": [
+                            "accept",
+                            "accept_for_session"
+                          ]
+                        },
+                        "actor_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "approved_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "request_id",
+                        "action_hash",
+                        "decision",
+                        "actor_id",
+                        "approved_at"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "output_limits": {
+                  "type": "object",
+                  "properties": {
+                    "content_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "entries": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "status_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "diff_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "stdout_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "stderr_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "cancellation": {
+                  "type": "object",
+                  "properties": {
+                    "cancellable": {
+                      "type": "boolean"
+                    },
+                    "timeout_ms": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "token": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "cancellable"
+                  ],
+                  "additionalProperties": false
+                },
+                "audit": {
+                  "type": "object",
+                  "properties": {
+                    "started_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.started"
+                    },
+                    "completed_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.completed"
+                    },
+                    "failed_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.failed"
+                    }
+                  },
+                  "required": [
+                    "started_event_type",
+                    "completed_event_type",
+                    "failed_event_type"
+                  ],
+                  "additionalProperties": false
+                },
+                "action": {
+                  "type": "string",
+                  "const": "local.filesystem.write"
+                },
+                "input": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "content": {
+                      "type": "string"
+                    },
+                    "encoding": {
+                      "type": "string",
+                      "enum": [
+                        "utf8",
+                        "base64"
+                      ]
+                    },
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "create",
+                        "overwrite"
+                      ]
+                    },
+                    "create_parents": {
+                      "type": "boolean"
+                    },
+                    "expected_base_hash": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "content",
+                    "mode",
+                    "create_parents"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "request_id",
+                "issued_at",
+                "attribution",
+                "lease",
+                "sandbox",
+                "approval",
+                "output_limits",
+                "cancellation",
+                "audit",
+                "action",
+                "input"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "issued_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "attribution": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "turn_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "session_id",
+                    "turn_id",
+                    "workspace_id",
+                    "provider_instance_id",
+                    "run_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "lease": {
+                  "type": "object",
+                  "properties": {
+                    "lease_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "capability_id": {
+                      "type": "string",
+                      "const": "filesystem"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "const": "workspace_write"
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hcp_session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "execution_host_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "lease_id",
+                    "capability_id",
+                    "scope",
+                    "run_id",
+                    "hcp_session_id",
+                    "execution_host_id",
+                    "provider_instance_id",
+                    "workspace_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "sandbox": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "read_only",
+                        "workspace_write",
+                        "danger_full_access"
+                      ]
+                    },
+                    "workspace_root": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "cwd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "requires_workspace_containment": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "workspace_root",
+                    "cwd",
+                    "requires_workspace_containment"
+                  ],
+                  "additionalProperties": false
+                },
+                "approval": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "const": "not_required"
+                        }
+                      },
+                      "required": [
+                        "status"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "const": "approved"
+                        },
+                        "request_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "action_hash": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "decision": {
+                          "type": "string",
+                          "enum": [
+                            "accept",
+                            "accept_for_session"
+                          ]
+                        },
+                        "actor_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "approved_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "request_id",
+                        "action_hash",
+                        "decision",
+                        "actor_id",
+                        "approved_at"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "output_limits": {
+                  "type": "object",
+                  "properties": {
+                    "content_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "entries": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "status_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "diff_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "stdout_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "stderr_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "cancellation": {
+                  "type": "object",
+                  "properties": {
+                    "cancellable": {
+                      "type": "boolean"
+                    },
+                    "timeout_ms": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "token": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "cancellable"
+                  ],
+                  "additionalProperties": false
+                },
+                "audit": {
+                  "type": "object",
+                  "properties": {
+                    "started_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.started"
+                    },
+                    "completed_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.completed"
+                    },
+                    "failed_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.failed"
+                    }
+                  },
+                  "required": [
+                    "started_event_type",
+                    "completed_event_type",
+                    "failed_event_type"
+                  ],
+                  "additionalProperties": false
+                },
+                "action": {
+                  "type": "string",
+                  "const": "local.filesystem.patch"
+                },
+                "input": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expected_base_hash": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "patch": {
+                      "type": "object",
+                      "properties": {
+                        "format": {
+                          "type": "string",
+                          "const": "unified_diff"
+                        },
+                        "content": {
+                          "type": "string",
+                          "minLength": 1
+                        }
+                      },
+                      "required": [
+                        "format",
+                        "content"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "create_if_missing": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "expected_base_hash",
+                    "patch"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "request_id",
+                "issued_at",
+                "attribution",
+                "lease",
+                "sandbox",
+                "approval",
+                "output_limits",
+                "cancellation",
+                "audit",
+                "action",
+                "input"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "issued_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "attribution": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "turn_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "session_id",
+                    "turn_id",
+                    "workspace_id",
+                    "provider_instance_id",
+                    "run_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "lease": {
+                  "type": "object",
+                  "properties": {
+                    "lease_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "capability_id": {
+                      "type": "string",
+                      "const": "git"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "const": "workspace_read"
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hcp_session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "execution_host_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "lease_id",
+                    "capability_id",
+                    "scope",
+                    "run_id",
+                    "hcp_session_id",
+                    "execution_host_id",
+                    "provider_instance_id",
+                    "workspace_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "sandbox": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "read_only",
+                        "workspace_write",
+                        "danger_full_access"
+                      ]
+                    },
+                    "workspace_root": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "cwd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "requires_workspace_containment": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "workspace_root",
+                    "cwd",
+                    "requires_workspace_containment"
+                  ],
+                  "additionalProperties": false
+                },
+                "approval": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "const": "not_required"
+                        }
+                      },
+                      "required": [
+                        "status"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "const": "approved"
+                        },
+                        "request_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "action_hash": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "decision": {
+                          "type": "string",
+                          "enum": [
+                            "accept",
+                            "accept_for_session"
+                          ]
+                        },
+                        "actor_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "approved_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "request_id",
+                        "action_hash",
+                        "decision",
+                        "actor_id",
+                        "approved_at"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "output_limits": {
+                  "type": "object",
+                  "properties": {
+                    "content_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "entries": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "status_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "diff_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "stdout_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "stderr_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "status_bytes"
+                  ],
+                  "additionalProperties": false
+                },
+                "cancellation": {
+                  "type": "object",
+                  "properties": {
+                    "cancellable": {
+                      "type": "boolean"
+                    },
+                    "timeout_ms": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "token": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "cancellable"
+                  ],
+                  "additionalProperties": false
+                },
+                "audit": {
+                  "type": "object",
+                  "properties": {
+                    "started_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.started"
+                    },
+                    "completed_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.completed"
+                    },
+                    "failed_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.failed"
+                    }
+                  },
+                  "required": [
+                    "started_event_type",
+                    "completed_event_type",
+                    "failed_event_type"
+                  ],
+                  "additionalProperties": false
+                },
+                "action": {
+                  "type": "string",
+                  "const": "local.git.status"
+                },
+                "input": {
+                  "type": "object",
+                  "properties": {
+                    "porcelain_version": {
+                      "type": "string",
+                      "enum": [
+                        "v1",
+                        "v2"
+                      ]
+                    },
+                    "include_branch": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "porcelain_version"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "request_id",
+                "issued_at",
+                "attribution",
+                "lease",
+                "sandbox",
+                "approval",
+                "output_limits",
+                "cancellation",
+                "audit",
+                "action",
+                "input"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "issued_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "attribution": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "turn_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "session_id",
+                    "turn_id",
+                    "workspace_id",
+                    "provider_instance_id",
+                    "run_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "lease": {
+                  "type": "object",
+                  "properties": {
+                    "lease_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "capability_id": {
+                      "type": "string",
+                      "const": "git"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "const": "workspace_read"
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hcp_session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "execution_host_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "lease_id",
+                    "capability_id",
+                    "scope",
+                    "run_id",
+                    "hcp_session_id",
+                    "execution_host_id",
+                    "provider_instance_id",
+                    "workspace_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "sandbox": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "read_only",
+                        "workspace_write",
+                        "danger_full_access"
+                      ]
+                    },
+                    "workspace_root": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "cwd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "requires_workspace_containment": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "workspace_root",
+                    "cwd",
+                    "requires_workspace_containment"
+                  ],
+                  "additionalProperties": false
+                },
+                "approval": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "const": "not_required"
+                        }
+                      },
+                      "required": [
+                        "status"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "const": "approved"
+                        },
+                        "request_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "action_hash": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "decision": {
+                          "type": "string",
+                          "enum": [
+                            "accept",
+                            "accept_for_session"
+                          ]
+                        },
+                        "actor_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "approved_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "request_id",
+                        "action_hash",
+                        "decision",
+                        "actor_id",
+                        "approved_at"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "output_limits": {
+                  "type": "object",
+                  "properties": {
+                    "content_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "entries": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "status_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "diff_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "stdout_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "stderr_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "diff_bytes"
+                  ],
+                  "additionalProperties": false
+                },
+                "cancellation": {
+                  "type": "object",
+                  "properties": {
+                    "cancellable": {
+                      "type": "boolean"
+                    },
+                    "timeout_ms": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "token": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "cancellable"
+                  ],
+                  "additionalProperties": false
+                },
+                "audit": {
+                  "type": "object",
+                  "properties": {
+                    "started_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.started"
+                    },
+                    "completed_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.completed"
+                    },
+                    "failed_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.failed"
+                    }
+                  },
+                  "required": [
+                    "started_event_type",
+                    "completed_event_type",
+                    "failed_event_type"
+                  ],
+                  "additionalProperties": false
+                },
+                "action": {
+                  "type": "string",
+                  "const": "local.git.diff"
+                },
+                "input": {
+                  "type": "object",
+                  "properties": {
+                    "paths": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    },
+                    "staged": {
+                      "type": "boolean"
+                    },
+                    "base_ref": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "request_id",
+                "issued_at",
+                "attribution",
+                "lease",
+                "sandbox",
+                "approval",
+                "output_limits",
+                "cancellation",
+                "audit",
+                "action",
+                "input"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "issued_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "attribution": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "turn_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "session_id",
+                    "turn_id",
+                    "workspace_id",
+                    "provider_instance_id",
+                    "run_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "lease": {
+                  "type": "object",
+                  "properties": {
+                    "lease_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "capability_id": {
+                      "type": "string",
+                      "const": "shell"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "const": "workspace"
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hcp_session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "execution_host_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "lease_id",
+                    "capability_id",
+                    "scope",
+                    "run_id",
+                    "hcp_session_id",
+                    "execution_host_id",
+                    "provider_instance_id",
+                    "workspace_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "sandbox": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "read_only",
+                        "workspace_write",
+                        "danger_full_access"
+                      ]
+                    },
+                    "workspace_root": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "cwd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "requires_workspace_containment": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "workspace_root",
+                    "cwd",
+                    "requires_workspace_containment"
+                  ],
+                  "additionalProperties": false
+                },
+                "approval": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "const": "approved"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "action_hash": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "decision": {
+                      "type": "string",
+                      "enum": [
+                        "accept",
+                        "accept_for_session"
+                      ]
+                    },
+                    "actor_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "approved_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "request_id",
+                    "action_hash",
+                    "decision",
+                    "actor_id",
+                    "approved_at"
+                  ],
+                  "additionalProperties": false
+                },
+                "output_limits": {
+                  "type": "object",
+                  "properties": {
+                    "content_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "entries": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "status_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "diff_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "stdout_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "stderr_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "stdout_bytes",
+                    "stderr_bytes"
+                  ],
+                  "additionalProperties": false
+                },
+                "cancellation": {
+                  "type": "object",
+                  "properties": {
+                    "cancellable": {
+                      "type": "boolean"
+                    },
+                    "timeout_ms": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "token": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "cancellable"
+                  ],
+                  "additionalProperties": false
+                },
+                "audit": {
+                  "type": "object",
+                  "properties": {
+                    "started_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.started"
+                    },
+                    "completed_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.completed"
+                    },
+                    "failed_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.failed"
+                    }
+                  },
+                  "required": [
+                    "started_event_type",
+                    "completed_event_type",
+                    "failed_event_type"
+                  ],
+                  "additionalProperties": false
+                },
+                "action": {
+                  "type": "string",
+                  "const": "local.shell.exec"
+                },
+                "input": {
+                  "type": "object",
+                  "properties": {
+                    "executable": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "argv": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "cwd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "use_shell": {
+                      "type": "boolean"
+                    },
+                    "env": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    },
+                    "stdin": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "executable",
+                    "argv",
+                    "cwd",
+                    "use_shell"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "request_id",
+                "issued_at",
+                "attribution",
+                "lease",
+                "sandbox",
+                "approval",
+                "output_limits",
+                "cancellation",
+                "audit",
+                "action",
+                "input"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "issued_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "attribution": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "turn_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "session_id",
+                    "turn_id",
+                    "workspace_id",
+                    "provider_instance_id",
+                    "run_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "lease": {
+                  "type": "object",
+                  "properties": {
+                    "lease_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "capability_id": {
+                      "type": "string",
+                      "const": "dev_server"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "const": "workspace"
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hcp_session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "execution_host_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "lease_id",
+                    "capability_id",
+                    "scope",
+                    "run_id",
+                    "hcp_session_id",
+                    "execution_host_id",
+                    "provider_instance_id",
+                    "workspace_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "sandbox": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "read_only",
+                        "workspace_write",
+                        "danger_full_access"
+                      ]
+                    },
+                    "workspace_root": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "cwd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "requires_workspace_containment": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "workspace_root",
+                    "cwd",
+                    "requires_workspace_containment"
+                  ],
+                  "additionalProperties": false
+                },
+                "approval": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "const": "approved"
+                    },
+                    "request_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "action_hash": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "decision": {
+                      "type": "string",
+                      "enum": [
+                        "accept",
+                        "accept_for_session"
+                      ]
+                    },
+                    "actor_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "approved_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "request_id",
+                    "action_hash",
+                    "decision",
+                    "actor_id",
+                    "approved_at"
+                  ],
+                  "additionalProperties": false
+                },
+                "output_limits": {
+                  "type": "object",
+                  "properties": {
+                    "content_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "entries": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "status_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "diff_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "stdout_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "stderr_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "cancellation": {
+                  "type": "object",
+                  "properties": {
+                    "cancellable": {
+                      "type": "boolean"
+                    },
+                    "timeout_ms": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "token": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "cancellable"
+                  ],
+                  "additionalProperties": false
+                },
+                "audit": {
+                  "type": "object",
+                  "properties": {
+                    "started_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.started"
+                    },
+                    "completed_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.completed"
+                    },
+                    "failed_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.failed"
+                    }
+                  },
+                  "required": [
+                    "started_event_type",
+                    "completed_event_type",
+                    "failed_event_type"
+                  ],
+                  "additionalProperties": false
+                },
+                "action": {
+                  "type": "string",
+                  "const": "local.dev_server.start"
+                },
+                "input": {
+                  "type": "object",
+                  "properties": {
+                    "server_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "executable": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "argv": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "cwd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "host": {
+                      "type": "string",
+                      "enum": [
+                        "127.0.0.1",
+                        "localhost"
+                      ]
+                    },
+                    "port": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 65535
+                    },
+                    "use_shell": {
+                      "type": "boolean"
+                    },
+                    "env": {
+                      "type": "object",
+                      "propertyNames": {
+                        "type": "string"
+                      },
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    },
+                    "readiness": {
+                      "type": "object",
+                      "properties": {
+                        "url": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "timeout_ms": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "timeout_ms"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "server_id",
+                    "executable",
+                    "argv",
+                    "cwd",
+                    "host",
+                    "port",
+                    "use_shell"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "request_id",
+                "issued_at",
+                "attribution",
+                "lease",
+                "sandbox",
+                "approval",
+                "output_limits",
+                "cancellation",
+                "audit",
+                "action",
+                "input"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "issued_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "attribution": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "turn_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "session_id",
+                    "turn_id",
+                    "workspace_id",
+                    "provider_instance_id",
+                    "run_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "lease": {
+                  "type": "object",
+                  "properties": {
+                    "lease_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "capability_id": {
+                      "type": "string",
+                      "const": "dev_server"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "const": "workspace"
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hcp_session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "execution_host_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "lease_id",
+                    "capability_id",
+                    "scope",
+                    "run_id",
+                    "hcp_session_id",
+                    "execution_host_id",
+                    "provider_instance_id",
+                    "workspace_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "sandbox": {
+                  "type": "object",
+                  "properties": {
+                    "mode": {
+                      "type": "string",
+                      "enum": [
+                        "read_only",
+                        "workspace_write",
+                        "danger_full_access"
+                      ]
+                    },
+                    "workspace_root": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "cwd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "requires_workspace_containment": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "mode",
+                    "workspace_root",
+                    "cwd",
+                    "requires_workspace_containment"
+                  ],
+                  "additionalProperties": false
+                },
+                "approval": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "const": "not_required"
+                        }
+                      },
+                      "required": [
+                        "status"
+                      ],
+                      "additionalProperties": false
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "const": "approved"
+                        },
+                        "request_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "action_hash": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "decision": {
+                          "type": "string",
+                          "enum": [
+                            "accept",
+                            "accept_for_session"
+                          ]
+                        },
+                        "actor_id": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "approved_at": {
+                          "type": "string",
+                          "format": "date-time",
+                          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                        }
+                      },
+                      "required": [
+                        "status",
+                        "request_id",
+                        "action_hash",
+                        "decision",
+                        "actor_id",
+                        "approved_at"
+                      ],
+                      "additionalProperties": false
+                    }
+                  ]
+                },
+                "output_limits": {
+                  "type": "object",
+                  "properties": {
+                    "content_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "entries": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "status_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "diff_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "stdout_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "stderr_bytes": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "additionalProperties": false
+                },
+                "cancellation": {
+                  "type": "object",
+                  "properties": {
+                    "cancellable": {
+                      "type": "boolean"
+                    },
+                    "timeout_ms": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "token": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "cancellable"
+                  ],
+                  "additionalProperties": false
+                },
+                "audit": {
+                  "type": "object",
+                  "properties": {
+                    "started_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.started"
+                    },
+                    "completed_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.completed"
+                    },
+                    "failed_event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.failed"
+                    }
+                  },
+                  "required": [
+                    "started_event_type",
+                    "completed_event_type",
+                    "failed_event_type"
+                  ],
+                  "additionalProperties": false
+                },
+                "action": {
+                  "type": "string",
+                  "const": "local.dev_server.stop"
+                },
+                "input": {
+                  "type": "object",
+                  "properties": {
+                    "server_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "signal": {
+                      "type": "string",
+                      "enum": [
+                        "SIGTERM",
+                        "SIGKILL"
+                      ]
+                    },
+                    "timeout_ms": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "server_id"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "request_id",
+                "issued_at",
+                "attribution",
+                "lease",
+                "sandbox",
+                "approval",
+                "output_limits",
+                "cancellation",
+                "audit",
+                "action",
+                "input"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "metadata": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "version",
+        "sent_at",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "const": "local.action.response"
+        },
+        "version": {
+          "type": "string",
+          "const": "hcp.v0"
+        },
+        "sent_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        "payload": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "status": {
+                  "type": "string",
+                  "const": "completed"
+                },
+                "completed_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "attribution": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "turn_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "session_id",
+                    "turn_id",
+                    "workspace_id",
+                    "provider_instance_id",
+                    "run_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "lease": {
+                  "type": "object",
+                  "properties": {
+                    "lease_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "capability_id": {
+                      "type": "string",
+                      "const": "filesystem"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "const": "workspace_read"
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hcp_session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "execution_host_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "lease_id",
+                    "capability_id",
+                    "scope",
+                    "run_id",
+                    "hcp_session_id",
+                    "execution_host_id",
+                    "provider_instance_id",
+                    "workspace_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "audit_events": {
+                  "type": "object",
+                  "properties": {
+                    "started": {
+                      "type": "object",
+                      "properties": {
+                        "event_type": {
+                          "type": "string",
+                          "const": "local_capability.action.started"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "event_type"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "completed": {
+                      "type": "object",
+                      "properties": {
+                        "event_type": {
+                          "type": "string",
+                          "const": "local_capability.action.completed"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "event_type"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "completed"
+                  ],
+                  "additionalProperties": false
+                },
+                "action": {
+                  "type": "string",
+                  "const": "local.filesystem.read"
+                },
+                "output": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "content": {
+                      "type": "string"
+                    },
+                    "encoding": {
+                      "type": "string",
+                      "enum": [
+                        "utf8",
+                        "base64"
+                      ]
+                    },
+                    "hash": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "truncated": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "content",
+                    "encoding",
+                    "hash"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "request_id",
+                "status",
+                "completed_at",
+                "attribution",
+                "lease",
+                "audit_events",
+                "action",
+                "output"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "status": {
+                  "type": "string",
+                  "const": "completed"
+                },
+                "completed_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "attribution": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "turn_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "session_id",
+                    "turn_id",
+                    "workspace_id",
+                    "provider_instance_id",
+                    "run_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "lease": {
+                  "type": "object",
+                  "properties": {
+                    "lease_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "capability_id": {
+                      "type": "string",
+                      "const": "filesystem"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "const": "workspace_read"
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hcp_session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "execution_host_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "lease_id",
+                    "capability_id",
+                    "scope",
+                    "run_id",
+                    "hcp_session_id",
+                    "execution_host_id",
+                    "provider_instance_id",
+                    "workspace_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "audit_events": {
+                  "type": "object",
+                  "properties": {
+                    "started": {
+                      "type": "object",
+                      "properties": {
+                        "event_type": {
+                          "type": "string",
+                          "const": "local_capability.action.started"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "event_type"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "completed": {
+                      "type": "object",
+                      "properties": {
+                        "event_type": {
+                          "type": "string",
+                          "const": "local_capability.action.completed"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "event_type"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "completed"
+                  ],
+                  "additionalProperties": false
+                },
+                "action": {
+                  "type": "string",
+                  "const": "local.filesystem.list"
+                },
+                "output": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "file",
+                              "directory",
+                              "other"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "type"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "truncated": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "entries"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "request_id",
+                "status",
+                "completed_at",
+                "attribution",
+                "lease",
+                "audit_events",
+                "action",
+                "output"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "status": {
+                  "type": "string",
+                  "const": "completed"
+                },
+                "completed_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "attribution": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "turn_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "session_id",
+                    "turn_id",
+                    "workspace_id",
+                    "provider_instance_id",
+                    "run_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "lease": {
+                  "type": "object",
+                  "properties": {
+                    "lease_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "capability_id": {
+                      "type": "string",
+                      "const": "filesystem"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "const": "workspace_write"
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hcp_session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "execution_host_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "lease_id",
+                    "capability_id",
+                    "scope",
+                    "run_id",
+                    "hcp_session_id",
+                    "execution_host_id",
+                    "provider_instance_id",
+                    "workspace_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "audit_events": {
+                  "type": "object",
+                  "properties": {
+                    "started": {
+                      "type": "object",
+                      "properties": {
+                        "event_type": {
+                          "type": "string",
+                          "const": "local_capability.action.started"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "event_type"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "completed": {
+                      "type": "object",
+                      "properties": {
+                        "event_type": {
+                          "type": "string",
+                          "const": "local_capability.action.completed"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "event_type"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "completed"
+                  ],
+                  "additionalProperties": false
+                },
+                "action": {
+                  "type": "string",
+                  "const": "local.filesystem.write"
+                },
+                "output": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "bytes_written": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "new_hash": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "bytes_written",
+                    "new_hash"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "request_id",
+                "status",
+                "completed_at",
+                "attribution",
+                "lease",
+                "audit_events",
+                "action",
+                "output"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "status": {
+                  "type": "string",
+                  "const": "completed"
+                },
+                "completed_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "attribution": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "turn_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "session_id",
+                    "turn_id",
+                    "workspace_id",
+                    "provider_instance_id",
+                    "run_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "lease": {
+                  "type": "object",
+                  "properties": {
+                    "lease_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "capability_id": {
+                      "type": "string",
+                      "const": "filesystem"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "const": "workspace_write"
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hcp_session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "execution_host_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "lease_id",
+                    "capability_id",
+                    "scope",
+                    "run_id",
+                    "hcp_session_id",
+                    "execution_host_id",
+                    "provider_instance_id",
+                    "workspace_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "audit_events": {
+                  "type": "object",
+                  "properties": {
+                    "started": {
+                      "type": "object",
+                      "properties": {
+                        "event_type": {
+                          "type": "string",
+                          "const": "local_capability.action.started"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "event_type"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "completed": {
+                      "type": "object",
+                      "properties": {
+                        "event_type": {
+                          "type": "string",
+                          "const": "local_capability.action.completed"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "event_type"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "completed"
+                  ],
+                  "additionalProperties": false
+                },
+                "action": {
+                  "type": "string",
+                  "const": "local.filesystem.patch"
+                },
+                "output": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "changed": {
+                      "type": "boolean"
+                    },
+                    "new_hash": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "changed",
+                    "new_hash"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "request_id",
+                "status",
+                "completed_at",
+                "attribution",
+                "lease",
+                "audit_events",
+                "action",
+                "output"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "status": {
+                  "type": "string",
+                  "const": "completed"
+                },
+                "completed_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "attribution": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "turn_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "session_id",
+                    "turn_id",
+                    "workspace_id",
+                    "provider_instance_id",
+                    "run_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "lease": {
+                  "type": "object",
+                  "properties": {
+                    "lease_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "capability_id": {
+                      "type": "string",
+                      "const": "git"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "const": "workspace_read"
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hcp_session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "execution_host_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "lease_id",
+                    "capability_id",
+                    "scope",
+                    "run_id",
+                    "hcp_session_id",
+                    "execution_host_id",
+                    "provider_instance_id",
+                    "workspace_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "audit_events": {
+                  "type": "object",
+                  "properties": {
+                    "started": {
+                      "type": "object",
+                      "properties": {
+                        "event_type": {
+                          "type": "string",
+                          "const": "local_capability.action.started"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "event_type"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "completed": {
+                      "type": "object",
+                      "properties": {
+                        "event_type": {
+                          "type": "string",
+                          "const": "local_capability.action.completed"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "event_type"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "completed"
+                  ],
+                  "additionalProperties": false
+                },
+                "action": {
+                  "type": "string",
+                  "const": "local.git.status"
+                },
+                "output": {
+                  "type": "object",
+                  "properties": {
+                    "porcelain": {
+                      "type": "string"
+                    },
+                    "branch": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "truncated": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "porcelain"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "request_id",
+                "status",
+                "completed_at",
+                "attribution",
+                "lease",
+                "audit_events",
+                "action",
+                "output"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "status": {
+                  "type": "string",
+                  "const": "completed"
+                },
+                "completed_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "attribution": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "turn_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "session_id",
+                    "turn_id",
+                    "workspace_id",
+                    "provider_instance_id",
+                    "run_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "lease": {
+                  "type": "object",
+                  "properties": {
+                    "lease_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "capability_id": {
+                      "type": "string",
+                      "const": "git"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "const": "workspace_read"
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hcp_session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "execution_host_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "lease_id",
+                    "capability_id",
+                    "scope",
+                    "run_id",
+                    "hcp_session_id",
+                    "execution_host_id",
+                    "provider_instance_id",
+                    "workspace_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "audit_events": {
+                  "type": "object",
+                  "properties": {
+                    "started": {
+                      "type": "object",
+                      "properties": {
+                        "event_type": {
+                          "type": "string",
+                          "const": "local_capability.action.started"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "event_type"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "completed": {
+                      "type": "object",
+                      "properties": {
+                        "event_type": {
+                          "type": "string",
+                          "const": "local_capability.action.completed"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "event_type"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "completed"
+                  ],
+                  "additionalProperties": false
+                },
+                "action": {
+                  "type": "string",
+                  "const": "local.git.diff"
+                },
+                "output": {
+                  "type": "object",
+                  "properties": {
+                    "diff": {
+                      "type": "string"
+                    },
+                    "truncated": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "diff"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "request_id",
+                "status",
+                "completed_at",
+                "attribution",
+                "lease",
+                "audit_events",
+                "action",
+                "output"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "status": {
+                  "type": "string",
+                  "const": "completed"
+                },
+                "completed_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "attribution": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "turn_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "session_id",
+                    "turn_id",
+                    "workspace_id",
+                    "provider_instance_id",
+                    "run_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "lease": {
+                  "type": "object",
+                  "properties": {
+                    "lease_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "capability_id": {
+                      "type": "string",
+                      "const": "shell"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "const": "workspace"
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hcp_session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "execution_host_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "lease_id",
+                    "capability_id",
+                    "scope",
+                    "run_id",
+                    "hcp_session_id",
+                    "execution_host_id",
+                    "provider_instance_id",
+                    "workspace_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "audit_events": {
+                  "type": "object",
+                  "properties": {
+                    "started": {
+                      "type": "object",
+                      "properties": {
+                        "event_type": {
+                          "type": "string",
+                          "const": "local_capability.action.started"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "event_type"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "completed": {
+                      "type": "object",
+                      "properties": {
+                        "event_type": {
+                          "type": "string",
+                          "const": "local_capability.action.completed"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "event_type"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "completed"
+                  ],
+                  "additionalProperties": false
+                },
+                "action": {
+                  "type": "string",
+                  "const": "local.shell.exec"
+                },
+                "output": {
+                  "type": "object",
+                  "properties": {
+                    "executable": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "argv": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "cwd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "exit_code": {
+                      "anyOf": [
+                        {
+                          "type": "integer",
+                          "minimum": -9007199254740991,
+                          "maximum": 9007199254740991
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "signal": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "stdout": {
+                      "type": "string"
+                    },
+                    "stderr": {
+                      "type": "string"
+                    },
+                    "timed_out": {
+                      "type": "boolean"
+                    },
+                    "stdout_truncated": {
+                      "type": "boolean"
+                    },
+                    "stderr_truncated": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "executable",
+                    "argv",
+                    "cwd",
+                    "exit_code",
+                    "stdout",
+                    "stderr",
+                    "timed_out"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "request_id",
+                "status",
+                "completed_at",
+                "attribution",
+                "lease",
+                "audit_events",
+                "action",
+                "output"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "status": {
+                  "type": "string",
+                  "const": "completed"
+                },
+                "completed_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "attribution": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "turn_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "session_id",
+                    "turn_id",
+                    "workspace_id",
+                    "provider_instance_id",
+                    "run_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "lease": {
+                  "type": "object",
+                  "properties": {
+                    "lease_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "capability_id": {
+                      "type": "string",
+                      "const": "dev_server"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "const": "workspace"
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hcp_session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "execution_host_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "lease_id",
+                    "capability_id",
+                    "scope",
+                    "run_id",
+                    "hcp_session_id",
+                    "execution_host_id",
+                    "provider_instance_id",
+                    "workspace_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "audit_events": {
+                  "type": "object",
+                  "properties": {
+                    "started": {
+                      "type": "object",
+                      "properties": {
+                        "event_type": {
+                          "type": "string",
+                          "const": "local_capability.action.started"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "event_type"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "completed": {
+                      "type": "object",
+                      "properties": {
+                        "event_type": {
+                          "type": "string",
+                          "const": "local_capability.action.completed"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "event_type"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "completed"
+                  ],
+                  "additionalProperties": false
+                },
+                "action": {
+                  "type": "string",
+                  "const": "local.dev_server.start"
+                },
+                "output": {
+                  "type": "object",
+                  "properties": {
+                    "server_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "pid": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    },
+                    "host": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "port": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 65535
+                    },
+                    "cwd": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "started_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    },
+                    "url": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "server_id",
+                    "pid",
+                    "host",
+                    "port",
+                    "cwd",
+                    "started_at"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "request_id",
+                "status",
+                "completed_at",
+                "attribution",
+                "lease",
+                "audit_events",
+                "action",
+                "output"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {
+                "request_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "status": {
+                  "type": "string",
+                  "const": "completed"
+                },
+                "completed_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                },
+                "attribution": {
+                  "type": "object",
+                  "properties": {
+                    "session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "turn_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "session_id",
+                    "turn_id",
+                    "workspace_id",
+                    "provider_instance_id",
+                    "run_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "lease": {
+                  "type": "object",
+                  "properties": {
+                    "lease_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "capability_id": {
+                      "type": "string",
+                      "const": "dev_server"
+                    },
+                    "scope": {
+                      "type": "string",
+                      "const": "workspace"
+                    },
+                    "run_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "hcp_session_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "execution_host_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "provider_instance_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "workspace_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "expires_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "lease_id",
+                    "capability_id",
+                    "scope",
+                    "run_id",
+                    "hcp_session_id",
+                    "execution_host_id",
+                    "provider_instance_id",
+                    "workspace_id"
+                  ],
+                  "additionalProperties": false
+                },
+                "audit_events": {
+                  "type": "object",
+                  "properties": {
+                    "started": {
+                      "type": "object",
+                      "properties": {
+                        "event_type": {
+                          "type": "string",
+                          "const": "local_capability.action.started"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "event_type"
+                      ],
+                      "additionalProperties": false
+                    },
+                    "completed": {
+                      "type": "object",
+                      "properties": {
+                        "event_type": {
+                          "type": "string",
+                          "const": "local_capability.action.completed"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0,
+                          "maximum": 9007199254740991
+                        }
+                      },
+                      "required": [
+                        "event_type"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "required": [
+                    "completed"
+                  ],
+                  "additionalProperties": false
+                },
+                "action": {
+                  "type": "string",
+                  "const": "local.dev_server.stop"
+                },
+                "output": {
+                  "type": "object",
+                  "properties": {
+                    "server_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "stopped_at": {
+                      "type": "string",
+                      "format": "date-time",
+                      "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                    }
+                  },
+                  "required": [
+                    "server_id",
+                    "stopped_at"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "request_id",
+                "status",
+                "completed_at",
+                "attribution",
+                "lease",
+                "audit_events",
+                "action",
+                "output"
+              ],
+              "additionalProperties": false
+            }
+          ]
+        },
+        "metadata": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "version",
+        "sent_at",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "const": "local.action.error"
+        },
+        "version": {
+          "type": "string",
+          "const": "hcp.v0"
+        },
+        "sent_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+        },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "request_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "action": {
+              "type": "string",
+              "enum": [
+                "local.filesystem.read",
+                "local.filesystem.list",
+                "local.filesystem.write",
+                "local.filesystem.patch",
+                "local.git.status",
+                "local.git.diff",
+                "local.shell.exec",
+                "local.dev_server.start",
+                "local.dev_server.stop"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "failed",
+                "cancelled",
+                "timed_out"
+              ]
+            },
+            "failed_at": {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+            },
+            "attribution": {
+              "type": "object",
+              "properties": {
+                "session_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "turn_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "workspace_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "provider_instance_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "run_id": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "session_id",
+                "turn_id",
+                "workspace_id",
+                "provider_instance_id",
+                "run_id"
+              ],
+              "additionalProperties": false
+            },
+            "lease": {
+              "type": "object",
+              "properties": {
+                "lease_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "capability_id": {
+                  "type": "string",
+                  "enum": [
+                    "filesystem",
+                    "git",
+                    "shell",
+                    "dev_server"
+                  ]
+                },
+                "scope": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "run_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "hcp_session_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "execution_host_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "provider_instance_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "workspace_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "expires_at": {
+                  "type": "string",
+                  "format": "date-time",
+                  "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                }
+              },
+              "required": [
+                "lease_id",
+                "capability_id",
+                "scope",
+                "run_id",
+                "hcp_session_id",
+                "execution_host_id",
+                "provider_instance_id",
+                "workspace_id"
+              ],
+              "additionalProperties": false
+            },
+            "error": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "enum": [
+                    "local_capability_lease_missing",
+                    "local_capability_lease_expired",
+                    "local_capability_lease_revoked",
+                    "local_capability_session_mismatch",
+                    "local_capability_workspace_mismatch",
+                    "local_capability_provider_mismatch",
+                    "local_capability_scope_not_granted",
+                    "local_capability_sandbox_denied",
+                    "local_capability_approval_required",
+                    "local_capability_approval_mismatch",
+                    "local_capability_path_denied",
+                    "local_capability_expected_hash_mismatch",
+                    "local_capability_output_limit_exceeded",
+                    "local_capability_timeout",
+                    "local_capability_cancelled",
+                    "local_capability_command_denied",
+                    "local_capability_process_failed",
+                    "local_capability_dev_server_exists",
+                    "local_capability_dev_server_not_found",
+                    "local_capability_action_failed"
+                  ]
+                },
+                "message": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "retryable": {
+                  "type": "boolean"
+                },
+                "details": {
+                  "type": "object",
+                  "propertyNames": {
+                    "type": "string"
+                  },
+                  "additionalProperties": {}
+                }
+              },
+              "required": [
+                "code",
+                "message",
+                "retryable"
+              ],
+              "additionalProperties": false
+            },
+            "audit_events": {
+              "type": "object",
+              "properties": {
+                "started": {
+                  "type": "object",
+                  "properties": {
+                    "event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.started"
+                    },
+                    "sequence": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "event_type"
+                  ],
+                  "additionalProperties": false
+                },
+                "failed": {
+                  "type": "object",
+                  "properties": {
+                    "event_type": {
+                      "type": "string",
+                      "const": "local_capability.action.failed"
+                    },
+                    "sequence": {
+                      "type": "integer",
+                      "exclusiveMinimum": 0,
+                      "maximum": 9007199254740991
+                    }
+                  },
+                  "required": [
+                    "event_type"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "failed"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "request_id",
+            "action",
+            "status",
+            "failed_at",
+            "attribution",
+            "error",
+            "audit_events"
+          ],
+          "additionalProperties": false
+        },
+        "metadata": {
+          "type": "object",
+          "propertyNames": {
+            "type": "string"
+          },
+          "additionalProperties": {}
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "version",
+        "sent_at",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
           "const": "harness.event"
         },
         "version": {
@@ -12903,5 +17918,5 @@
   ],
   "$id": "https://schemas.hcp-runner.local/hcp.v0/message.schema.json",
   "title": "HCP protocol message",
-  "description": "JSON Schema for known hcp.v0 protocol messages."
+  "description": "Structural JSON Schema for known hcp.v0 protocol messages. Runtime parsers enforce additional cross-field invariants such as lease-to-attribution equality."
 }

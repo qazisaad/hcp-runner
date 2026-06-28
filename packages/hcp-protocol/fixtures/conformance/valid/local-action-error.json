@@ -1,0 +1,40 @@
+{
+  "id": "message-local-action-error",
+  "type": "local.action.error",
+  "version": "hcp.v0",
+  "sent_at": "2026-01-01T00:00:00.000Z",
+  "payload": {
+    "request_id": "local-action-patch-1",
+    "action": "local.filesystem.patch",
+    "status": "failed",
+    "failed_at": "2026-01-01T00:00:03.000Z",
+    "attribution": {
+      "session_id": "session-1",
+      "turn_id": "turn-1",
+      "workspace_id": "workspace-1",
+      "provider_instance_id": "provider-1",
+      "run_id": "run-1"
+    },
+    "lease": {
+      "lease_id": "local-lease-patch",
+      "capability_id": "filesystem",
+      "scope": "workspace_write",
+      "run_id": "run-1",
+      "hcp_session_id": "session-1",
+      "execution_host_id": "host-1",
+      "provider_instance_id": "provider-1",
+      "workspace_id": "workspace-1"
+    },
+    "error": {
+      "code": "local_capability_expected_hash_mismatch",
+      "message": "The expected base hash did not match.",
+      "retryable": false
+    },
+    "audit_events": {
+      "failed": {
+        "event_type": "local_capability.action.failed",
+        "sequence": 12
+      }
+    }
+  }
+}
