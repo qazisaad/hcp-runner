@@ -234,7 +234,7 @@ For Codex and Claude Code sessions, the runner creates a session-owned loopback 
 
 Local capabilities are short-lived grants minted by the control plane and enforced by the runner. A lease is bound to a session, host, provider instance, and workspace.
 
-Local machine actions are HCP-native protocol contracts, not MCP tool calls. The protocol package defines `local.action.request`, `local.action.response`, and `local.action.error` envelopes for filesystem read/list/write/patch, Git status/diff, shell exec, and dev-server start/stop. Each request binds session and turn attribution, lease identity, sandbox requirements, output limits, cancellation behavior, approval action hashes when required, and the expected local capability audit event mapping.
+Local machine actions are HCP-native protocol contracts, not MCP tool calls. The protocol package defines `local.action.request`, `local.action.response`, and `local.action.error` envelopes for filesystem read/list/write/patch, Git status/diff, shell exec, and dev-server start/stop. The runner handles inbound `local.action.request` messages over the control-plane WebSocket and returns protocol-valid `local.action.response` or `local.action.error` messages. Each request binds session and turn attribution, lease identity, sandbox requirements, output limits, cancellation behavior, approval action hashes when required, and the expected local capability audit event mapping.
 
 The runner validates:
 
@@ -243,6 +243,8 @@ The runner validates:
 - Requested scopes against configured runner capabilities.
 - Provider support for each capability.
 - Max-call limits.
+- Local action request idempotency by `request_id` and payload hash.
+- Protocol output limits and truncation flags for filesystem, Git, and shell outputs.
 - Shell command policy including executable allow/deny lists, argument patterns, shell-wrapper permission, timeout, and selected-workspace-only current working directory.
 - Workspace containment using real paths so symlink escapes are rejected.
 

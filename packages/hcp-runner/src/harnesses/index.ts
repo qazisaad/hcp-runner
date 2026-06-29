@@ -6,6 +6,7 @@ import type {
   HostResumeCursor,
   HcpSessionStartPayload,
   HcpTurnSendPayload,
+  LocalActionRequestPayload,
   LocalCapabilityLease,
   McpServerAttachment,
 } from "@hcp-runner/protocol";
@@ -13,7 +14,15 @@ import type {
 import type { AuditLogger } from "../audit/index.js";
 import type { ProviderInstanceConfig, RunnerConfig } from "../config/index.js";
 import type { ProviderDriverStatus } from "../host/provider-registry.js";
-import { LocalCapabilityLeaseManager } from "../local-actions/index.js";
+import {
+  LocalCapabilityEngine,
+  LocalCapabilityLeaseManager,
+  LocalCapabilityPolicyError,
+} from "../local-actions/index.js";
+import type {
+  LocalCapabilityExecutionContext,
+  LocalCapabilityExecutionEvent,
+} from "../local-actions/executors.js";
 import { McpAttachmentClient, type McpProofSigner } from "../mcp/McpAttachmentClient.js";
 import { McpProxyServer } from "../mcp/McpProxyServer.js";
 import {
@@ -94,6 +103,7 @@ export class HarnessSessionManager {
   readonly #config: RunnerConfig;
   readonly #hostId: string;
   readonly #localCapabilities: LocalCapabilityLeaseManager;
+  readonly #localCapabilityEngine: LocalCapabilityEngine;
   readonly #mcpProofSigner: McpProofSigner | undefined;
   readonly #mcpClientFactory: HarnessMcpClientFactory;
   readonly #auditLogger: AuditLogger | undefined;
@@ -108,6 +118,7 @@ export class HarnessSessionManager {
     this.#config = config;
     this.#hostId = resolvedOptions.hostId ?? config.host_id ?? config.runner_id;
     this.#localCapabilities = new LocalCapabilityLeaseManager(config, this.#hostId);
+    this.#localCapabilityEngine = new LocalCapabilityEngine(this.#localCapabilities);
     this.#mcpProofSigner = resolvedOptions.mcpProofSigner;
     this.#mcpClientFactory = resolvedOptions.mcpClientFactory ?? defaultMcpClientFactory;
     this.#auditLogger = resolvedOptions.auditLogger;
@@ -121,6 +132,10 @@ export class HarnessSessionManager {
 
   providerDriverStatuses(): Promise<ProviderDriverStatus[]> {
     return this.#adapterRegistry.probeProviders(this.#config.provider_instances);
+  }
+
+  localCapabilityEngine(): LocalCapabilityEngine {
+    return this.#localCapabilityEngine;
   }
 
   resumeCursor(): HostResumeCursor | undefined {
@@ -161,6 +176,64 @@ export class HarnessSessionManager {
       );
     }
     return events;
+  }
+
+  async resolveLocalActionContext(payload: LocalActionRequestPayload): Promise<LocalCapabilityExecutionContext> {
+    const session: HarnessSession | undefined = this.#sessions.get(payload.attribution.session_id);
+    if (!session) {
+      throw new LocalCapabilityPolicyError(
+        "local_capability_lease_missing",
+        `Session '${payload.attribution.session_id}' does not have an active local capability lease.`,
+      );
+    }
+
+    if (session.workspaceId !== payload.attribution.workspace_id) {
+      throw new LocalCapabilityPolicyError(
+        "local_capability_workspace_mismatch",
+        `Local action workspace '${payload.attribution.workspace_id}' does not match active session workspace '${session.workspaceId}'.`,
+      );
+    }
+    if (session.providerInstanceId !== payload.attribution.provider_instance_id) {
+      throw new LocalCapabilityPolicyError(
+        "local_capability_provider_mismatch",
+        `Local action provider '${payload.attribution.provider_instance_id}' does not match active session provider '${session.providerInstanceId}'.`,
+      );
+    }
+
+    const lease: LocalCapabilityLease | undefined = session.localCapabilityLease;
+    if (!lease) {
+      throw new LocalCapabilityPolicyError(
+        "local_capability_lease_missing",
+        `Session '${session.sessionId}' was not started with a local capability lease.`,
+      );
+    }
+    assertRequestLeaseMatchesActiveLease(payload, lease);
+
+    const workspaceRoot: string = this.#requireWorkspaceRoot(session.workspaceId);
+    await assertSandboxMatchesSession(payload, session, workspaceRoot);
+    return {
+      session_id: session.sessionId,
+      turn_id: payload.attribution.turn_id,
+      workspace_id: session.workspaceId,
+      provider_instance_id: session.providerInstanceId,
+      workspace_root: workspaceRoot,
+      sandbox_mode: session.startPayload.sandbox_mode,
+      lease,
+    };
+  }
+
+  recordLocalActionEvents(
+    sessionId: string,
+    turnId: string,
+    events: LocalCapabilityExecutionEvent[],
+  ): HcpHarnessEventPayload[] {
+    const session: HarnessSession | undefined = this.#sessions.get(sessionId);
+    if (!session) {
+      throw new LocalCapabilityPolicyError("local_capability_lease_missing", `Session '${sessionId}' is not active.`);
+    }
+    return events.map((event: LocalCapabilityExecutionEvent): HcpHarnessEventPayload =>
+      this.#event(sessionId, turnId, event.event_type, event.data),
+    );
   }
 
   async startSession(payload: HcpSessionStartPayload): Promise<HcpHarnessEventPayload[]> {
@@ -395,6 +468,17 @@ export class HarnessSessionManager {
     }
   }
 
+  #requireWorkspaceRoot(workspaceId: string): string {
+    const workspace = this.#config.workspaces.find((candidate): boolean => candidate.id === workspaceId);
+    if (!workspace) {
+      throw new LocalCapabilityPolicyError(
+        "local_capability_workspace_mismatch",
+        `Workspace '${workspaceId}' is not configured by runner config.`,
+      );
+    }
+    return workspace.path;
+  }
+
   async #attachMcpServers(payload: HcpSessionStartPayload, provider: ProviderInstanceConfig): Promise<HarnessMcpAttachmentResult> {
     const clients: HarnessMcpClient[] = [];
     const adapterAttachments: McpServerAttachment[] = [];
@@ -521,6 +605,68 @@ async function realpathOrWorkspaceError(path: string): Promise<string> {
       throw new HarnessSessionError("workspace_not_allowed", `Workspace path '${path}' could not be resolved: ${error.message}`);
     }
     throw error;
+  }
+}
+
+async function realpathOrLocalActionError(path: string): Promise<string> {
+  try {
+    return await realpath(path);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      throw new LocalCapabilityPolicyError(
+        "local_capability_path_denied",
+        `Local action path '${path}' could not be resolved: ${error.message}`,
+      );
+    }
+    throw error;
+  }
+}
+
+function assertRequestLeaseMatchesActiveLease(payload: LocalActionRequestPayload, lease: LocalCapabilityLease): void {
+  if (
+    payload.lease.lease_id !== lease.lease_id ||
+    payload.lease.run_id !== lease.run_id ||
+    payload.lease.hcp_session_id !== lease.hcp_session_id ||
+    payload.lease.execution_host_id !== lease.execution_host_id ||
+    payload.lease.provider_instance_id !== lease.provider_instance_id ||
+    payload.lease.workspace_id !== lease.workspace_id ||
+    payload.attribution.run_id !== lease.run_id
+  ) {
+    throw new LocalCapabilityPolicyError(
+      "local_capability_lease_missing",
+      "Local action lease binding does not match the active session lease.",
+    );
+  }
+}
+
+async function assertSandboxMatchesSession(
+  payload: LocalActionRequestPayload,
+  session: HarnessSession,
+  workspaceRoot: string,
+): Promise<void> {
+  if (payload.sandbox.mode !== session.startPayload.sandbox_mode) {
+    throw new LocalCapabilityPolicyError(
+      "local_capability_sandbox_read_only",
+      `Local action sandbox mode '${payload.sandbox.mode}' does not match active session sandbox mode '${session.startPayload.sandbox_mode}'.`,
+    );
+  }
+
+  const resolvedRequestRoot: string = await realpathOrLocalActionError(payload.sandbox.workspace_root);
+  const resolvedWorkspaceRoot: string = await realpathOrLocalActionError(workspaceRoot);
+  if (resolvedRequestRoot !== resolvedWorkspaceRoot) {
+    throw new LocalCapabilityPolicyError(
+      "local_capability_sandbox_read_only",
+      "Local action sandbox workspace root does not match the active session workspace.",
+    );
+  }
+
+  const resolvedRequestCwd: string = await realpathOrLocalActionError(payload.sandbox.cwd);
+  const resolvedSessionCwd: string = await realpathOrLocalActionError(session.cwd);
+  if (resolvedRequestCwd !== resolvedSessionCwd) {
+    throw new LocalCapabilityPolicyError(
+      "local_capability_sandbox_read_only",
+      "Local action sandbox cwd does not match the active session cwd.",
+    );
   }
 }
 

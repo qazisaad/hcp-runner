@@ -17,6 +17,8 @@ import {
   type HcpNackPayload,
   type HostResumeCursor,
   type ControlPlaneCommandMessageType,
+  type LocalActionErrorPayload,
+  type LocalActionResponsePayload,
 } from "@hcp-runner/protocol";
 import WebSocket from "ws";
 
@@ -24,6 +26,8 @@ import type { RunnerConfig } from "../config/index.js";
 import { HarnessAdapterError } from "../harnesses/adapters.js";
 import { HarnessSessionError, HarnessSessionManager } from "../harnesses/index.js";
 import { ProviderInstanceRegistry } from "../host/provider-registry.js";
+import { LocalActionDispatcher, type LocalActionDispatchOutcome } from "../local-actions/dispatcher.js";
+import { LocalCapabilityExecutor } from "../local-actions/executors.js";
 
 type CommandRecord =
   | {
@@ -42,6 +46,28 @@ type CommandRecord =
     };
 
 type SettledCommandRecord = Exclude<CommandRecord, { outcome: "pending" }>;
+
+type LocalActionRecord =
+  | {
+      payloadHash: string;
+      requestPayload: Extract<HcpMessage, { type: "local.action.request" }>["payload"];
+      outcome: "pending";
+      completion: Promise<SettledLocalActionRecord>;
+    }
+  | {
+      payloadHash: string;
+      requestPayload: Extract<HcpMessage, { type: "local.action.request" }>["payload"];
+      outcome: "response";
+      payload: LocalActionResponsePayload;
+    }
+  | {
+      payloadHash: string;
+      requestPayload: Extract<HcpMessage, { type: "local.action.request" }>["payload"];
+      outcome: "error";
+      payload: LocalActionErrorPayload;
+    };
+
+type SettledLocalActionRecord = Exclude<LocalActionRecord, { outcome: "pending" }>;
 
 export type RunnerReconnectOptions = {
   initialDelayMs?: number;
@@ -66,6 +92,7 @@ export class RunnerConnection {
   readonly #connectionTokenProvider: (() => Promise<string | undefined>) | undefined;
   readonly #onLog: (message: string) => void;
   readonly #harnessSessions: HarnessSessionManager;
+  readonly #localActionDispatcher: LocalActionDispatcher;
   readonly #reconnectInitialDelayMs: number;
   readonly #reconnectMaxDelayMs: number;
   #socket: WebSocket | undefined;
@@ -74,6 +101,8 @@ export class RunnerConnection {
   #reconnectAttempt = 0;
   #closing = false;
   readonly #commandRecords = new Map<string, CommandRecord>();
+  readonly #localActionRecords = new Map<string, LocalActionRecord>();
+  readonly #localActionMismatchRecords = new Map<string, SettledLocalActionRecord>();
 
   constructor(options: RunnerConnectionOptions) {
     this.#config = options.config;
@@ -88,6 +117,12 @@ export class RunnerConnection {
     this.#connectionTokenProvider = options.connectionTokenProvider;
     this.#onLog = options.onLog ?? (() => undefined);
     this.#harnessSessions = options.harnessSessions ?? new HarnessSessionManager(options.config);
+    this.#localActionDispatcher = new LocalActionDispatcher({
+      executor: new LocalCapabilityExecutor(this.#harnessSessions.localCapabilityEngine()),
+      resolveContext: (payload) => this.#harnessSessions.resolveLocalActionContext(payload),
+      emitEvents: (sessionId, turnId, events) =>
+        this.#harnessSessions.recordLocalActionEvents(sessionId, turnId, events),
+    });
     this.#reconnectInitialDelayMs = options.reconnect?.initialDelayMs ?? 1_000;
     this.#reconnectMaxDelayMs = options.reconnect?.maxDelayMs ?? 30_000;
   }
@@ -220,11 +255,16 @@ export class RunnerConnection {
       case "tool_servers.detach":
         await this.#handleCommand(envelope, () => []);
         return;
+      case "local.action.request":
+        await this.#handleLocalAction(envelope);
+        return;
       case "hcp.command.ack":
       case "hcp.command.nack":
       case "host.hello":
       case "host.heartbeat":
       case "host.capabilities.updated":
+      case "local.action.response":
+      case "local.action.error":
       case "harness.event":
         this.#onLog(`Ignoring inbound ${envelope.type}; it is not a runner command.`);
         return;
@@ -325,8 +365,9 @@ export class RunnerConnection {
     }
   }
 
-  #handleSessionStart(envelope: Extract<HcpMessage, { type: "harness.session.start" }>): Promise<HcpHarnessEventPayload[]> {
-    return this.#harnessSessions.startSession(envelope.payload);
+  async #handleSessionStart(envelope: Extract<HcpMessage, { type: "harness.session.start" }>): Promise<HcpHarnessEventPayload[]> {
+    this.#localActionDispatcher.markSessionActive(envelope.payload.session_id);
+    return await this.#harnessSessions.startSession(envelope.payload);
   }
 
   #handleTurnSend(envelope: Extract<HcpMessage, { type: "harness.turn.send" }>): Promise<HcpHarnessEventPayload[]> {
@@ -337,8 +378,93 @@ export class RunnerConnection {
     return this.#harnessSessions.cancelTurn(envelope.payload.session_id, envelope.payload.turn_id);
   }
 
-  #handleSessionStop(envelope: Extract<HcpMessage, { type: "harness.session.stop" }>): Promise<HcpHarnessEventPayload[]> {
-    return this.#harnessSessions.stopSession(envelope.payload.session_id, envelope.payload.reason);
+  async #handleSessionStop(envelope: Extract<HcpMessage, { type: "harness.session.stop" }>): Promise<HcpHarnessEventPayload[]> {
+    const events: HcpHarnessEventPayload[] = await this.#harnessSessions.stopSession(
+      envelope.payload.session_id,
+      envelope.payload.reason,
+    );
+    await this.#localActionDispatcher.stopDevServersForSession(envelope.payload.session_id);
+    return events;
+  }
+
+  async #handleLocalAction(envelope: Extract<HcpMessage, { type: "local.action.request" }>): Promise<void> {
+    const requestId: string = envelope.payload.request_id;
+    const payloadHash: string = hashCommandPayload(envelope);
+    const existingRecord: LocalActionRecord | undefined = this.#localActionRecords.get(requestId);
+
+    if (existingRecord !== undefined) {
+      if (existingRecord.payloadHash === payloadHash) {
+        if (existingRecord.outcome === "pending") {
+          const settledRecord: SettledLocalActionRecord = await existingRecord.completion;
+          this.#sendLocalActionRecord(settledRecord);
+          return;
+        }
+        this.#sendLocalActionRecord(existingRecord);
+        return;
+      }
+
+      const mismatchKey: string = `${requestId}:${payloadHash}`;
+      const existingMismatchRecord: SettledLocalActionRecord | undefined = this.#localActionMismatchRecords.get(mismatchKey);
+      if (existingMismatchRecord) {
+        this.#sendLocalActionRecord(existingMismatchRecord);
+        return;
+      }
+
+      const mismatchOutcome: LocalActionDispatchOutcome = this.#localActionDispatcher.duplicatePayloadMismatch(envelope.payload);
+      const mismatchRecord: SettledLocalActionRecord =
+        mismatchOutcome.type === "response"
+          ? {
+              payloadHash,
+              requestPayload: envelope.payload,
+              outcome: "response",
+              payload: mismatchOutcome.payload,
+            }
+          : {
+              payloadHash,
+              requestPayload: envelope.payload,
+              outcome: "error",
+              payload: mismatchOutcome.payload,
+            };
+      this.#localActionMismatchRecords.set(mismatchKey, mismatchRecord);
+      for (const event of mismatchOutcome.events) {
+        this.#send(createHcpEnvelope("harness.event", event));
+      }
+      this.#sendLocalActionRecord(mismatchRecord);
+      return;
+    }
+
+    let settleLocalAction: (record: SettledLocalActionRecord) => void;
+    const completion: Promise<SettledLocalActionRecord> = new Promise<SettledLocalActionRecord>((resolve) => {
+      settleLocalAction = resolve;
+    });
+    this.#localActionRecords.set(requestId, {
+      payloadHash,
+      requestPayload: envelope.payload,
+      outcome: "pending",
+      completion,
+    });
+
+    const outcome: LocalActionDispatchOutcome = await this.#localActionDispatcher.dispatch(envelope.payload);
+    const record: SettledLocalActionRecord =
+      outcome.type === "response"
+        ? {
+            payloadHash,
+            requestPayload: envelope.payload,
+            outcome: "response",
+            payload: outcome.payload,
+          }
+        : {
+            payloadHash,
+            requestPayload: envelope.payload,
+            outcome: "error",
+            payload: outcome.payload,
+          };
+    this.#localActionRecords.set(requestId, record);
+    settleLocalAction!(record);
+    for (const event of outcome.events) {
+      this.#send(createHcpEnvelope("harness.event", event));
+    }
+    this.#sendLocalActionRecord(record);
   }
 
   async #sendCapabilities(): Promise<void> {
@@ -422,6 +548,14 @@ export class RunnerConnection {
     };
 
     this.#send(createHcpEnvelope("hcp.command.ack", payload));
+  }
+
+  #sendLocalActionRecord(record: SettledLocalActionRecord): void {
+    if (record.outcome === "response") {
+      this.#send(createHcpEnvelope("local.action.response", record.payload));
+      return;
+    }
+    this.#send(createHcpEnvelope("local.action.error", record.payload));
   }
 
   #sendParseNack(raw: string, error: unknown): void {

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -9,7 +10,7 @@ import { describe, it } from "node:test";
 import type { LocalCapabilityLease } from "@hcp-runner/protocol";
 
 import type { RunnerConfig } from "../config/index.js";
-import { LocalCapabilityEngine, LocalCapabilityLeaseManager } from "./index.js";
+import { LocalCapabilityEngine, LocalCapabilityLeaseManager, LocalCapabilityPolicyError } from "./index.js";
 import { LocalCapabilityExecutionError, LocalCapabilityExecutor, type LocalCapabilityExecutionContext } from "./executors.js";
 
 const execFileAsync = promisify(execFile);
@@ -92,6 +93,54 @@ async function createWorkspace(): Promise<{ root: string; cleanup(): Promise<voi
   };
 }
 
+async function allocateLocalPort(): Promise<number> {
+  const server = createServer();
+  const port: number = await new Promise<number>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      resolve(typeof address === "object" && address !== null ? address.port : 0);
+    });
+  });
+  await new Promise<void>((resolve, reject) => {
+    server.close((error?: Error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve();
+    });
+  });
+  return port;
+}
+
+async function waitForProcessExit(pid: number, timeoutMs = 1_000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (!isProcessRunning(pid)) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
+  throw new Error(`Process ${pid} was still running after ${timeoutMs}ms.`);
+}
+
+function isProcessRunning(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error: unknown) {
+    if (isNodeErrorCode(error, "ESRCH")) {
+      return false;
+    }
+    throw error;
+  }
+}
+
+function isNodeErrorCode(error: unknown, code: string): boolean {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code?: unknown }).code === code;
+}
+
 function executor(): LocalCapabilityExecutor {
   return new LocalCapabilityExecutor(new LocalCapabilityEngine(new LocalCapabilityLeaseManager(config(), "host-1")));
 }
@@ -162,6 +211,35 @@ describe("LocalCapabilityExecutor", () => {
     }
   });
 
+  it("rejects writes and create-if-missing patches through dangling symlinks", async () => {
+    const workspace = await createWorkspace();
+    const outside = await createWorkspace();
+    const localExecutor = executor();
+    await symlink(join(outside.root, "missing.txt"), join(workspace.root, "dangling-link"));
+
+    try {
+      await assert.rejects(
+        () => localExecutor.writeFile(context(workspace.root), "dangling-link", "nope"),
+        (error: unknown): boolean =>
+          error instanceof LocalCapabilityExecutionError &&
+          error.events.at(-1)?.event_type === "local_capability.action.failed",
+      );
+
+      await assert.rejects(
+        () =>
+          localExecutor.patchFile(context(workspace.root), "dangling-link", {
+            expectedBaseHash: "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            patchContent: "--- a/dangling-link\n+++ b/dangling-link\n@@ -0,0 +1 @@\n+nope\n",
+            createIfMissing: true,
+          }),
+        LocalCapabilityExecutionError,
+      );
+    } finally {
+      await workspace.cleanup();
+      await outside.cleanup();
+    }
+  });
+
   it("executes git read operations inside the workspace", async () => {
     const workspace = await createWorkspace();
     const localExecutor = executor();
@@ -206,6 +284,26 @@ describe("LocalCapabilityExecutor", () => {
     }
   });
 
+  it("force-kills shell commands that ignore SIGTERM after timeout", async () => {
+    const workspace = await createWorkspace();
+    const localExecutor = executor();
+    const startedAt = Date.now();
+
+    try {
+      const result = await localExecutor.shell(context(workspace.root), {
+        executable: process.execPath,
+        argv: ["-e", "process.on('SIGTERM', () => undefined); setInterval(() => undefined, 1000);"],
+        timeout_seconds: 1,
+      });
+
+      assert.equal(result.result.timed_out, true);
+      assert.equal(result.result.signal, "SIGKILL");
+      assert.ok(Date.now() - startedAt < 4_000);
+    } finally {
+      await workspace.cleanup();
+    }
+  });
+
   it("starts and stops session-owned dev servers", async () => {
     const workspace = await createWorkspace();
     const localExecutor = executor();
@@ -229,6 +327,209 @@ describe("LocalCapabilityExecutor", () => {
       for (const server of localExecutor.listDevServers()) {
         await localExecutor.stopDevServer(context(workspace.root), server.server_id);
       }
+      await workspace.cleanup();
+    }
+  });
+
+  it("fails dev-server start when the process exits immediately", async () => {
+    const workspace = await createWorkspace();
+    const localExecutor = executor();
+    const port = await allocateLocalPort();
+
+    try {
+      await assert.rejects(
+        () =>
+          localExecutor.startDevServer(context(workspace.root), {
+            server_id: "dev-exits",
+            executable: process.execPath,
+            argv: ["-e", "process.exit(7)"],
+            timeout_seconds: 5,
+            host: "127.0.0.1",
+            port,
+          }),
+        (error: unknown): boolean =>
+          error instanceof LocalCapabilityExecutionError &&
+          error.cause instanceof LocalCapabilityPolicyError &&
+          error.cause.code === "local_capability_dev_server_start_failed",
+      );
+      assert.equal(localExecutor.listDevServers().length, 0);
+    } finally {
+      await workspace.cleanup();
+    }
+  });
+
+  it("cleans up dev-server processes when readiness times out", async () => {
+    const workspace = await createWorkspace();
+    const localExecutor = executor();
+    const port = await allocateLocalPort();
+    const pidPath = join(workspace.root, "dev-timeout.pid");
+
+    try {
+      await assert.rejects(
+        () =>
+          localExecutor.startDevServer(context(workspace.root), {
+            server_id: "dev-timeout",
+            executable: process.execPath,
+            argv: [
+              "-e",
+              [
+                "const fs = require('node:fs');",
+                "fs.writeFileSync(process.argv.at(-1), String(process.pid));",
+                "process.on('SIGTERM', () => undefined);",
+                "setInterval(() => undefined, 1000);",
+              ].join(" "),
+              pidPath,
+            ],
+            timeout_seconds: 5,
+            host: "127.0.0.1",
+            port,
+            readiness: {
+              url: `http://127.0.0.1:${port}/ready`,
+              timeout_ms: 300,
+            },
+          }),
+        (error: unknown): boolean =>
+          error instanceof LocalCapabilityExecutionError &&
+          error.cause instanceof LocalCapabilityPolicyError &&
+          error.cause.code === "local_capability_timeout",
+      );
+      const pid: number = Number.parseInt(await readFile(pidPath, "utf8"), 10);
+      await waitForProcessExit(pid);
+      assert.equal(localExecutor.listDevServers().length, 0);
+    } finally {
+      for (const server of localExecutor.listDevServers()) {
+        await localExecutor.stopDevServer(context(workspace.root), server.server_id);
+      }
+      await workspace.cleanup();
+    }
+  });
+
+  it("caps dev-server readiness waits to the authorized action timeout", async () => {
+    const workspace = await createWorkspace();
+    const localExecutor = executor();
+    const port = await allocateLocalPort();
+    const pidPath = join(workspace.root, "dev-action-timeout.pid");
+    const startedAt = Date.now();
+
+    try {
+      await assert.rejects(
+        () =>
+          localExecutor.startDevServer(context(workspace.root), {
+            server_id: "dev-action-timeout",
+            executable: process.execPath,
+            argv: [
+              "-e",
+              [
+                "const fs = require('node:fs');",
+                "fs.writeFileSync(process.argv.at(-1), String(process.pid));",
+                "process.on('SIGTERM', () => undefined);",
+                "setInterval(() => undefined, 1000);",
+              ].join(" "),
+              pidPath,
+            ],
+            timeout_seconds: 1,
+            host: "127.0.0.1",
+            port,
+            readiness: {
+              url: `http://127.0.0.1:${port}/ready`,
+              timeout_ms: 5_000,
+            },
+          }),
+        (error: unknown): boolean =>
+          error instanceof LocalCapabilityExecutionError &&
+          error.cause instanceof LocalCapabilityPolicyError &&
+          error.cause.code === "local_capability_timeout",
+      );
+      assert.ok(Date.now() - startedAt < 4_000);
+      const pid: number = Number.parseInt(await readFile(pidPath, "utf8"), 10);
+      await waitForProcessExit(pid);
+      assert.equal(localExecutor.listDevServers().length, 0);
+    } finally {
+      for (const server of localExecutor.listDevServers()) {
+        await localExecutor.stopDevServer(context(workspace.root), server.server_id);
+      }
+      await workspace.cleanup();
+    }
+  });
+
+  it("returns dev-server start success only after readiness succeeds", async () => {
+    const workspace = await createWorkspace();
+    const localExecutor = executor();
+    const port = await allocateLocalPort();
+
+    try {
+      const started = await localExecutor.startDevServer(context(workspace.root), {
+        server_id: "dev-ready",
+        executable: process.execPath,
+        argv: [
+          "-e",
+          [
+            "const http = require('node:http');",
+            "const port = Number(process.argv.at(-1));",
+            "const server = http.createServer((_request, response) => { response.end('ready'); });",
+            "server.listen(port, '127.0.0.1');",
+            "process.on('SIGTERM', () => server.close(() => process.exit(0)));",
+            "setInterval(() => undefined, 1000);",
+          ].join(" "),
+          String(port),
+        ],
+        timeout_seconds: 5,
+        host: "127.0.0.1",
+        port,
+        readiness: {
+          url: `http://127.0.0.1:${port}/ready`,
+          timeout_ms: 2_000,
+        },
+      });
+
+      assert.equal(started.result.server_id, "dev-ready");
+      assert.equal(started.result.port, port);
+      assert.equal(localExecutor.listDevServers().length, 1);
+    } finally {
+      for (const server of localExecutor.listDevServers()) {
+        await localExecutor.stopDevServer(context(workspace.root), server.server_id);
+      }
+      await workspace.cleanup();
+    }
+  });
+
+  it("returns execution errors when dev-server executables fail to spawn", async () => {
+    const workspace = await createWorkspace();
+    const missingExecutable = "hcp-runner-missing-dev-server-executable";
+    const localExecutor = new LocalCapabilityExecutor(new LocalCapabilityEngine(new LocalCapabilityLeaseManager(config(), "host-1")));
+    const localLease = lease({
+      capabilities: [
+        {
+          id: "dev_server",
+          scopes: ["workspace"],
+          approval_policy: "full_access",
+          command_policy: {
+            allowed_executables: [missingExecutable],
+            argv_patterns: [".*"],
+            cwd_policy: "selected_workspace_only",
+            env_policy: "minimal",
+            allow_shell: false,
+            timeout_seconds: 5,
+            network_policy: "inherit",
+          },
+        },
+      ],
+    });
+
+    try {
+      await assert.rejects(
+        () =>
+          localExecutor.startDevServer(context(workspace.root, localLease), {
+            server_id: "dev-missing",
+            executable: missingExecutable,
+            argv: [],
+            timeout_seconds: 5,
+            host: "127.0.0.1",
+            port: 43212,
+          }),
+        LocalCapabilityExecutionError,
+      );
+    } finally {
       await workspace.cleanup();
     }
   });

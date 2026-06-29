@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, mkdir, rm } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { createServer, type Server as HttpServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -14,6 +14,9 @@ import {
   type HcpMessage,
   type HcpSessionStartPayload,
   type HcpTurnSendPayload,
+  type LocalGitStatusRequestPayload,
+  type LocalActionRequestPayload,
+  type LocalCapabilityLease,
 } from "@hcp-runner/protocol";
 
 import { RunnerConnection } from "./runner-connection.js";
@@ -106,6 +109,66 @@ function createSessionStartPayload(cwd: string): HcpSessionStartPayload {
     continue_session: false,
     model_selection: { model: "mock-model" },
     mcp_servers: [],
+  };
+}
+
+function createLocalCapabilityLease(overrides: Partial<LocalCapabilityLease> = {}): LocalCapabilityLease {
+  return {
+    lease_id: "lease-1",
+    org_id: "org-1",
+    workflow_id: "workflow-1",
+    run_id: "run-1",
+    node_id: "node-1",
+    hcp_session_id: "session-1",
+    execution_host_id: "runner-test",
+    provider_instance_id: "mock-provider",
+    workspace_id: "repo",
+    issued_at: "2026-01-01T00:00:00.000Z",
+    expires_at: "2999-01-01T00:00:00.000Z",
+    policy_version: "policy-1",
+    capabilities: [{ id: "filesystem", scopes: ["workspace_read", "workspace_write"], max_calls: 1 }],
+    ...overrides,
+  };
+}
+
+function createFilesystemReadRequest(workspace: TestWorkspace, path = "project/notes.txt"): LocalActionRequestPayload {
+  return {
+    request_id: "local-read-1",
+    action: "local.filesystem.read",
+    issued_at: "2026-01-01T00:00:00.000Z",
+    attribution: {
+      session_id: "session-1",
+      turn_id: "turn-1",
+      workspace_id: "repo",
+      provider_instance_id: "mock-provider",
+      run_id: "run-1",
+    },
+    lease: {
+      lease_id: "lease-1",
+      capability_id: "filesystem",
+      scope: "workspace_read",
+      run_id: "run-1",
+      hcp_session_id: "session-1",
+      execution_host_id: "runner-test",
+      provider_instance_id: "mock-provider",
+      workspace_id: "repo",
+      expires_at: "2999-01-01T00:00:00.000Z",
+    },
+    sandbox: {
+      mode: "workspace_write",
+      workspace_root: workspace.root,
+      cwd: workspace.project,
+      requires_workspace_containment: true,
+    },
+    approval: { status: "not_required" },
+    output_limits: { content_bytes: 65_536 },
+    cancellation: { cancellable: false },
+    audit: {
+      started_event_type: "local_capability.action.started",
+      completed_event_type: "local_capability.action.completed",
+      failed_event_type: "local_capability.action.failed",
+    },
+    input: { path, encoding: "utf8" },
   };
 }
 
@@ -315,6 +378,152 @@ describe("RunnerConnection", () => {
     }
   });
 
+  it("handles local action requests with response replay and payload mismatch errors", async () => {
+    const workspace = await createWorkspace();
+    await writeFile(join(workspace.project, "notes.txt"), "hello", "utf8");
+    const sessionStartPayload: HcpSessionStartPayload = {
+      ...createSessionStartPayload(workspace.project),
+      local_capability_lease: createLocalCapabilityLease(),
+    };
+    const readRequest: LocalActionRequestPayload = createFilesystemReadRequest(workspace);
+    const mismatchRequest: LocalGitStatusRequestPayload = {
+      ...readRequest,
+      action: "local.git.status",
+      lease: {
+        ...readRequest.lease,
+        lease_id: "lease-mismatch",
+        capability_id: "git",
+        scope: "workspace_read",
+      },
+      output_limits: { status_bytes: 65_536 },
+      input: { porcelain_version: "v1", include_branch: true },
+    };
+    const server = await startServer(async (socket: WebSocket, messages: HcpMessage[]) => {
+      await waitForMessage(messages, "host.hello");
+      socket.send(
+        JSON.stringify(
+          createHcpEnvelope("host.accepted", {
+            protocol_version: HCP_VERSION,
+            heartbeat_interval_seconds: 60,
+          }),
+        ),
+      );
+
+      const sessionStart = createHcpEnvelope("harness.session.start", sessionStartPayload);
+      socket.send(JSON.stringify(sessionStart));
+      await waitForAck(messages, sessionStart.id);
+
+      const localAction = createHcpEnvelope("local.action.request", readRequest);
+      socket.send(JSON.stringify(localAction));
+      await waitForLocalActionResponseCount(messages, "local-read-1", 1);
+      socket.send(JSON.stringify(localAction));
+      await waitForLocalActionResponseCount(messages, "local-read-1", 2);
+      socket.send(JSON.stringify(createHcpEnvelope("local.action.request", mismatchRequest)));
+      await waitForLocalActionErrorCount(messages, "local-read-1", "local_capability_action_failed", 1);
+      socket.send(JSON.stringify(createHcpEnvelope("local.action.request", mismatchRequest)));
+    });
+    const connection = new RunnerConnection({
+      config: { ...createConfigBase(workspace.root), control_plane_url: server.url },
+      runnerVersion: "0.0.0-test",
+    });
+
+    try {
+      await connection.connect();
+      const response = await waitForLocalActionResponseCount(server.messages, "local-read-1", 2);
+      const mismatch = await waitForLocalActionErrorCount(server.messages, "local-read-1", "local_capability_action_failed", 2);
+      const localActionEvents: Array<Extract<HcpMessage, { type: "harness.event" }>> = server.messages.filter(
+        (message): message is Extract<HcpMessage, { type: "harness.event" }> =>
+          message.type === "harness.event" &&
+          (message.payload.event_type === "local_capability.action.started" ||
+            message.payload.event_type === "local_capability.action.completed"),
+      );
+      const mismatchEvents: Array<Extract<HcpMessage, { type: "harness.event" }>> = server.messages.filter(
+        (message): message is Extract<HcpMessage, { type: "harness.event" }> =>
+          message.type === "harness.event" &&
+          message.payload.event_type === "local_capability.action.failed" &&
+          "action" in message.payload.data &&
+          message.payload.data.action === "local.git.status",
+      );
+
+      if (response.payload.action !== "local.filesystem.read") {
+        throw new Error("Expected local.filesystem.read response.");
+      }
+      assert.equal(response.payload.output.content, "hello");
+      assert.equal(response.payload.audit_events.completed.event_type, "local_capability.action.completed");
+      assert.equal(mismatch.payload.status, "failed");
+      assert.equal(mismatch.payload.action, "local.git.status");
+      if (!mismatch.payload.lease) {
+        throw new Error("Expected mismatch error payload to include lease attribution.");
+      }
+      assert.equal(mismatch.payload.lease.lease_id, "lease-mismatch");
+      assert.equal(mismatch.payload.lease.capability_id, "git");
+      assert.equal(localActionEvents.length, 2);
+      assert.equal(mismatchEvents.length, 1);
+      const mismatchEvent = mismatchEvents[0];
+      if (!mismatchEvent || !("lease_id" in mismatchEvent.payload.data)) {
+        throw new Error("Expected mismatch failed event to include lease attribution.");
+      }
+      assert.equal(mismatchEvent.payload.data.lease_id, "lease-mismatch");
+      assert.equal(
+        server.messages.some(
+          (message) => message.type === "hcp.command.ack" && message.payload.command_id === "local-read-1",
+        ),
+        false,
+      );
+    } finally {
+      await connection.close();
+      await server.close();
+      await workspace.cleanup();
+    }
+  });
+
+  it("returns protocol local action errors for denied filesystem paths", async () => {
+    const workspace = await createWorkspace();
+    const sessionStartPayload: HcpSessionStartPayload = {
+      ...createSessionStartPayload(workspace.project),
+      local_capability_lease: createLocalCapabilityLease({
+        capabilities: [{ id: "filesystem", scopes: ["workspace_read", "workspace_write"] }],
+      }),
+    };
+    const deniedRequest: LocalActionRequestPayload = {
+      ...createFilesystemReadRequest(workspace, "../secret.txt"),
+      request_id: "local-read-denied",
+    };
+    const server = await startServer(async (socket: WebSocket, messages: HcpMessage[]) => {
+      await waitForMessage(messages, "host.hello");
+      socket.send(
+        JSON.stringify(
+          createHcpEnvelope("host.accepted", {
+            protocol_version: HCP_VERSION,
+            heartbeat_interval_seconds: 60,
+          }),
+        ),
+      );
+
+      const sessionStart = createHcpEnvelope("harness.session.start", sessionStartPayload);
+      socket.send(JSON.stringify(sessionStart));
+      await waitForAck(messages, sessionStart.id);
+      socket.send(JSON.stringify(createHcpEnvelope("local.action.request", deniedRequest)));
+    });
+    const connection = new RunnerConnection({
+      config: { ...createConfigBase(workspace.root), control_plane_url: server.url },
+      runnerVersion: "0.0.0-test",
+    });
+
+    try {
+      await connection.connect();
+      const error = await waitForLocalActionError(server.messages, "local-read-denied", "local_capability_path_denied");
+      const failedEvent = await waitForHarnessEvent(server.messages, "local_capability.action.failed");
+
+      assert.equal(error.payload.audit_events.failed.sequence, failedEvent.payload.sequence);
+      assert.equal(error.payload.error.retryable, false);
+    } finally {
+      await connection.close();
+      await server.close();
+      await workspace.cleanup();
+    }
+  });
+
   it("reconnects and sends host hello after a dropped socket", async () => {
     const workspace = await createWorkspace();
     let connectionCount = 0;
@@ -500,6 +709,52 @@ async function waitForEventCount(messages: HcpMessage[], count: number) {
     (message): message is Extract<HcpMessage, { type: "harness.event" }> =>
       message.type === "harness.event" &&
       messages.filter((candidate) => candidate.type === "harness.event").length >= count,
+  );
+}
+
+async function waitForHarnessEvent(messages: HcpMessage[], eventType: HcpHarnessEventPayload["event_type"]) {
+  return waitFor(
+    messages,
+    (message): message is Extract<HcpMessage, { type: "harness.event" }> =>
+      message.type === "harness.event" && message.payload.event_type === eventType,
+  );
+}
+
+async function waitForLocalActionResponseCount(messages: HcpMessage[], requestId: string, count: number) {
+  return waitFor(
+    messages,
+    (message): message is Extract<HcpMessage, { type: "local.action.response" }> =>
+      message.type === "local.action.response" &&
+      message.payload.request_id === requestId &&
+      messages.filter(
+        (candidate) => candidate.type === "local.action.response" && candidate.payload.request_id === requestId,
+      ).length >= count,
+  );
+}
+
+async function waitForLocalActionError(messages: HcpMessage[], requestId: string, code: string) {
+  return waitFor(
+    messages,
+    (message): message is Extract<HcpMessage, { type: "local.action.error" }> =>
+      message.type === "local.action.error" &&
+      message.payload.request_id === requestId &&
+      message.payload.error.code === code,
+  );
+}
+
+async function waitForLocalActionErrorCount(messages: HcpMessage[], requestId: string, code: string, count: number) {
+  return waitFor(
+    messages,
+    (message): message is Extract<HcpMessage, { type: "local.action.error" }> =>
+      message.type === "local.action.error" &&
+      message.payload.request_id === requestId &&
+      message.payload.error.code === code &&
+      messages.filter(
+        (candidate) =>
+          candidate.type === "local.action.error" &&
+          candidate.payload.request_id === requestId &&
+          candidate.payload.error.code === code,
+      ).length >= count,
   );
 }
 
